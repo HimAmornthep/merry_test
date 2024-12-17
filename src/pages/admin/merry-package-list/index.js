@@ -22,7 +22,6 @@ function MerryPackageList() {
   const fetchPackages = async () => {
     try {
       const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
-
       setLoading(true);
       const res = await axios.get(`${apiBaseUrl}/api/admin/packages`);
       setPackages(res.data); // เก็บข้อมูลใน state
@@ -84,11 +83,9 @@ function MerryPackageList() {
   const handleDelete = async () => {
     try {
       const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
-      
+
       // เรียก API เพื่อลบข้อมูลในฐานข้อมูล
-      await axios.delete(
-        `${apiBaseUrl}/api/admin/packages/${detailToDelete}`,
-      );
+      await axios.delete(`${apiBaseUrl}/api/admin/packages/${detailToDelete}`);
       //, {data: { id: detailToDelete },}
       // อัปเดตรายการ package หลังลบสำเร็จ
       setPackages(packages.filter((pkg) => pkg.package_id !== detailToDelete));

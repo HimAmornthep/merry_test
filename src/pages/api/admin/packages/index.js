@@ -1,10 +1,18 @@
 import connectionPool from "@/utils/db";
-import { cloudinaryUpload } from "@/utils/upload";
+import { v2 as cloudinary } from "cloudinary";
+import streamifier from "streamifier";
 import multer from "multer";
 import jwt from "jsonwebtoken";
 
-// ตั้งค่าการเก็บไฟล์ด้วย multer
-const multerUpload = multer({ dest: "public/files" });
+// ตั้งค่า Cloudinary
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
+});
+
+// ตั้งค่า multer ให้ใช้ MemoryStorage
+const multerUpload = multer({ storage: multer.memoryStorage() });
 
 // กำหนด config สำหรับ Next.js API Route (ต้องปิด bodyParser)
 export const config = {
@@ -13,8 +21,20 @@ export const config = {
   },
 };
 
+// ฟังก์ชันอัปโหลดไฟล์ไปยัง Cloudinary โดยใช้ Buffer
+const cloudinaryUpload = (fileBuffer) => {
+  return new Promise((resolve, reject) => {
+    const uploadStream = cloudinary.uploader.upload_stream((error, result) => {
+      if (error) return reject(error);
+      resolve(result);
+    });
+    streamifier.createReadStream(fileBuffer).pipe(uploadStream);
+  });
+};
+
 export default async function handle(req, res) {
   if (req.method === "POST") {
+    // ใช้ multerUpload จัดการอัปโหลดไฟล์จาก FormData
     multerUpload.single("icon")(req, res, async (err) => {
       if (err) {
         console.error("File upload error:", err);
@@ -26,8 +46,6 @@ export default async function handle(req, res) {
       try {
         // ดึง token จาก Authorization Header
         const authHeader = req.headers.authorization;
-        console.log("Authorization Headerrrrr:", authHeader);
-
         if (!authHeader || !authHeader.startsWith("Bearer ")) {
           return res.status(401).json({ error: "Unauthorized" });
         }
@@ -68,7 +86,7 @@ export default async function handle(req, res) {
         // อัปโหลดรูปภาพไปยัง Cloudinary
         let iconUrl = null;
         if (req.file) {
-          const uploadResult = await cloudinaryUpload(req.file); // ใช้ฟังก์ชันใหม่
+          const uploadResult = await cloudinaryUpload(req.file.buffer);
           iconUrl = uploadResult.url; // เก็บเฉพาะ URL ของรูปภาพ
         }
 
@@ -99,7 +117,6 @@ export default async function handle(req, res) {
     try {
       const query = `SELECT * FROM packages ORDER BY created_date DESC`;
       const { rows } = await connectionPool.query(query);
-
       return res.status(200).json(rows);
     } catch (error) {
       console.error("Database Error: ", error.message);

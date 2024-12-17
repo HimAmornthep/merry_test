@@ -27,7 +27,7 @@ function MerryPackageEdit() {
   const handleDeletePackage = async () => {
     try {
       const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
-      
+
       // เรียก API เพื่อลบข้อมูลในฐานข้อมูล
       await axios.delete(`${apiBaseUrl}/api/admin/packages/${id}`);
       router.push("/admin/merry-package-list");
@@ -123,24 +123,23 @@ function MerryPackageEdit() {
     formData.append("description", JSON.stringify(details.map((d) => d.text)));
     if (newIcon) formData.append("icon", newIcon); // เพิ่มรูปภาพใหม่ถ้ามี
 
-    console.log("FormData before sending:", {
-      name_package: packageData.name_package,
-      limit_match: packageData.limit_match, // ตรวจสอบว่าค่านี้ถูกต้อง
-      price: packageData.price,
-      description: JSON.stringify(details.map((d) => d.text)),
-    });
-
     try {
       console.log("before put");
       console.log("Check Tokennn", token);
+      const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
+      console.log("API Base URL:", apiBaseUrl);
 
-      const response = await axios.put(`/api/admin/packages/${id}`, formData, {
-        headers: {
-          "Content-Type": "multipart/form-data",
-          Authorization: `Bearer ${token}`,
+      const response = await axios.put(
+        `${apiBaseUrl}/api/admin/packages/${id}`,
+        formData,
+        {
+          headers: {
+            "Content-Type": "multipart/form-data",
+            Authorization: `Bearer ${token}`,
+          },
         },
-      });
-
+      );
+      console.log("PUT Response:", response.data);
       // ตรวจสอบว่า API ส่ง URL ของรูปภาพใหม่กลับมาหรือไม่
       if (response.data.icon_url) {
         setPackageData((prev) => ({
