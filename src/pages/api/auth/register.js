@@ -3,16 +3,16 @@ import connectionPool from "@/utils/db.js";
 import { cloudinaryUpload } from "../../../utils/upload.js";
 import bcrypt from "bcrypt";
 
-
-const multerUpload = multer({ dest: "public/files" });
+const multerUpload = multer({ storage: multer.memoryStorage() });
 
 export const config = {
   api: {
-    bodyParser: false, 
+    bodyParser: false,
   },
 };
 
 export default async function handler(req, res) {
+  console.log("TESTSTEP1", req.method);
   if (req.method !== "POST") {
     return res.setHeader("Allow", ["POST"]).status(405).end();
   }
@@ -33,13 +33,10 @@ export default async function handler(req, res) {
       const racial_Preference_id = parseInt(req.body.racialPreferences, 10); // แก้ไขจาก sexualPreferences
       const meeting_Interest_id = parseInt(req.body.meetingInterests, 10);
       const racial_identity_id = parseInt(req.body.racialIdentities, 10);
-      const hobbies = req.body.hobbies; 
+      const hobbies = req.body.hobbies;
       const location_id = parseInt(req.body.selectedLocation, 10);
       const city_id = parseInt(req.body.citys, 10);
-      console.log("Testlocation_id", location_id);
-      console.log("Testcity_id", city_id);
 
-      
       if (typeof hobbies === "string") {
         try {
           const parsedHobbies = JSON.parse(hobbies);
@@ -61,7 +58,7 @@ export default async function handler(req, res) {
                 racial_Preference_id: racial_Preference_id,
                 meeting_Interest_id: meeting_Interest_id,
                 hobbies_id: hobbies_id,
-                image_profile: req.body.avatar, 
+                image_profile: req.body.avatar,
                 gender_id: gender_id,
                 about_me: req.body.aboutme,
                 racial_identity_id: racial_identity_id,
@@ -70,7 +67,6 @@ export default async function handler(req, res) {
               const birthYear = new Date(req.body.date).getFullYear();
               const currentYear = new Date().getFullYear();
               let age = currentYear - birthYear;
-
 
               if (!user.password) {
                 return res
@@ -95,13 +91,24 @@ export default async function handler(req, res) {
                   .json({ message: "Username or email already exists" });
               }
 
-              const uploadedUrls = [];
-              for (let file of req.files.avatar) {
-                const avatarUrl = await cloudinaryUpload(file);
-                uploadedUrls.push(avatarUrl); 
+              const image_profile = [];
+              if (req.files?.avatar) {
+                for (let file of req.files.avatar) {
+                  try {
+                    const uploadedFile = await cloudinaryUpload(
+                      file.buffer,
+                      file.originalname,
+                    );
+                    image_profile.push(uploadedFile.url);
+                  } catch (error) {
+                    console.error("Cloudinary upload error:", error.message);
+                    return res.status(500).json({
+                      message: "File upload failed",
+                      error: error.message,
+                    });
+                  }
+                }
               }
-              user["image_profile"] = uploadedUrls.map((item) => item.url);
-              console.log("TESTPIC", user.image_profile);
 
               const insertQuery = `
           INSERT INTO users (
@@ -115,8 +122,8 @@ export default async function handler(req, res) {
                 user.email,
                 user.password,
               ]);
-       
-              const userId = result.rows[0].user_id; 
+
+              const userId = result.rows[0].user_id;
               const insertQueryProfiles = `
           INSERT INTO user_profiles ( user_id,name,date_of_birth,age,location_id,city_id,gender_id,sexual_Preference_id,racial_Preference_id,meeting_Interest_id,hobbies_id,about_me,image_profile,racial_identity_id)
           VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14)`;
@@ -134,7 +141,7 @@ export default async function handler(req, res) {
                 user.meeting_Interest_id,
                 user.hobbies_id,
                 user.about_me,
-                user.image_profile,
+                image_profile,
                 user.racial_identity_id,
               ]);
 
