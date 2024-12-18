@@ -1,5 +1,6 @@
 import { Footer, NavBar } from "@/components/NavBar";
 import { useState } from "react";
+import { CustomButton, CardImage } from "@/components/CustomUi";
 import axios from "axios"; // นำเข้า axios
 
 export default function Complaint() {
@@ -29,8 +30,7 @@ export default function Complaint() {
         },
       });
 
-      // ตรวจสอบว่าได้รับคำตอบจาก API
-      console.log("API Response:", res.data); // เพิ่มการ log เพื่อตรวจสอบ response จาก API
+      console.log("API Response:", res.data); // เพื่อตรวจสอบ response จาก API
 
       if (res.status === 201) {
         window.alert("Complaint submitted successfully!"); 
@@ -48,13 +48,24 @@ export default function Complaint() {
   return (
     <>
       <NavBar />
-      <div className="bg-gray-50 flex items-center justify-center min-h-screen">
-        <div className="w-full max-w-md bg-white p-6 rounded-lg shadow-lg">
+      <div className="bg-utility-primary lg:flex-row lg:flex lg:items-center lg:justify-center gap-32 pt-10 min-h-screen lg:pb-48  ">
+      <figure className="flex items-center justify-center  lg:px-12 lg:order-2  ">
+          <CardImage className="h-[25rem] w-[15rem] lg:h-[40rem] lg:w-[25rem]">
+            <img
+              src="/images/login_page_man.jpg"
+              alt="Man smiling while using laptop"
+              className={`h-full w-full object-cover object-right grayscale`}
+            />
+          </CardImage>
+        </figure>
+
+        
+        <div className="w-full max-w-md bg-white p-6 rounded-lg lg:order-1  ">
           {/* Header */}
-          <h3 className="text-sm text-amber-700 mb-1 uppercase font-medium">
+          <h3 className="text-sm text-third-700 mb-1 uppercase font-medium">
             Complaint
           </h3>
-          <h1 className="text-3xl font-bold text-pink-700 leading-tight mb-6">
+          <h1 className="text-3xl font-bold text-second-500 leading-tight mb-6">
             If you have any trouble <br />
             Don't be afraid to tell us!
           </h1>
@@ -98,15 +109,15 @@ export default function Complaint() {
             </div>
 
             {/* Submit Button */}
-            <button
+            <CustomButton 
               type="submit"
-              className="w-full bg-pink-600 hover:bg-pink-700 text-white font-semibold py-2 px-4 rounded-lg transition-all duration-200"
+              buttonType="primary"
             >
               Submit
-            </button>
+            </CustomButton>
           </form>
-
         </div>
+        
       </div>
       <Footer />
     </>
