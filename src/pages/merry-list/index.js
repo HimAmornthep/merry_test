@@ -10,7 +10,7 @@ import React, { useState } from "react";
 
 function MerryCountBox({ count = 0, text = "Merry", twoHearts = false }) {
   return (
-    <div className="flex w-[12.5rem] flex-col gap-1 rounded-2xl border-2 border-fourth-200 bg-utility-primary px-6 py-4">
+    <div className="flex w-full flex-col gap-1 rounded-2xl border-2 border-fourth-200 bg-utility-primary px-6 py-4 md:w-[12.5rem]">
       <div className="flex items-center gap-2">
         <p className="text-2xl font-bold text-primary-500">{count}</p>
         <div className="relative flex text-primary-400">
@@ -30,91 +30,28 @@ function MerryCountBox({ count = 0, text = "Merry", twoHearts = false }) {
         </div>
       </div>
 
-      <p className="font-medium text-fourth-700">{text}</p>
+      <p className="text-sm font-medium text-fourth-700 md:text-base">{text}</p>
     </div>
   );
 }
 
 function ProfileBox() {
-  const ActionButton = ({ Icon, onClick }) => {
+  const ProfileButton = ({ className = "flex" }) => {
+    const ActionButton = ({ Icon, onClick }) => {
+      return (
+        <button
+          className={`flex size-11 items-center justify-center rounded-2xl bg-utility-primary text-fourth-700 transition-all duration-300 [box-shadow:3px_3px_12.5px_rgba(0,0,0,0.1)] hover:scale-105 md:size-12 ${className}`}
+          onClick={onClick}
+        >
+          <Icon className="size-5 md:size-6" />
+        </button>
+      );
+    };
+
     return (
-      <button
-        className="flex size-12 items-center justify-center rounded-2xl bg-utility-primary text-fourth-700 transition-all duration-300 [box-shadow:3px_3px_12.5px_rgba(0,0,0,0.1)] hover:scale-105"
-        onClick={onClick}
+      <div
+        className={`flex flex-col items-end justify-center gap-5 md:justify-start ${className}`}
       >
-        <Icon className="size-6" />
-      </button>
-    );
-  };
-
-  const buttonIcon = [HiMiniChatBubbleOvalLeftEllipsis, IoMdEye];
-
-  const detailList = [
-    "Sexual identities",
-    "Sexual preferences",
-    "Racial preferences",
-    "Meeting interests",
-  ];
-
-  const profileData = ["Female", "Male", "Indefinite", "Long-term commitment"];
-
-  const [merryToggle, setMerryToggle] = useState(true);
-
-  return (
-    <div className="flex justify-between gap-10">
-      <div className="flex gap-10">
-        {/* Profile picture */}
-        <figure className="relative aspect-square w-[11rem] overflow-hidden rounded-3xl">
-          <img
-            src="/images/test1.png"
-            alt=""
-            className="h-full w-full object-cover"
-          />
-
-          <div className="absolute bottom-0 left-0 flex h-[1.5rem] w-[5.5rem] justify-end rounded-tr-xl bg-second-100 pr-2 pt-1 text-xs text-second-600">
-            Merry today
-          </div>
-        </figure>
-
-        <div className="flex flex-col justify-between text-fourth-900">
-          {/* Profile name */}
-          <div className="flex gap-5">
-            <p className="text-2xl font-bold">
-              Daeny <span className="text-fourth-700">24</span>
-            </p>
-
-            <div className="flex items-center gap-1 text-fourth-700">
-              <HiMiniMapPin className="size-4 text-primary-200" />
-              <p>Bangkok, Thailand</p>
-            </div>
-          </div>
-
-          {/* Profile detail */}
-          <div className="flex gap-8">
-            <div className="flex flex-col gap-3">
-              {detailList.map((list, index) => (
-                <p
-                  key={index}
-                  className="text-sm font-semibold text-fourth-900"
-                >
-                  {list}
-                </p>
-              ))}
-            </div>
-
-            <div className="flex flex-col gap-3">
-              {profileData.map((data, index) => (
-                <p key={index} className="text-sm text-fourth-700">
-                  {data}
-                </p>
-              ))}
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Button */}
-      <div className="flex flex-col items-end gap-5">
         {/* Merry match/Not match */}
         <div className="flex items-center gap-1 rounded-full border-2 border-primary-500 px-4 py-[0.1rem] text-primary-500">
           {/* Two hearts icon */}
@@ -135,13 +72,105 @@ function ProfileBox() {
 
           {/* Merry button */}
           <button
-            className={`flex size-12 items-center justify-center rounded-2xl text-fourth-700 transition-all duration-300 [box-shadow:3px_3px_12.5px_rgba(0,0,0,0.1)] hover:scale-105 ${merryToggle ? "bg-primary-500 text-utility-primary" : "bg-utility-primary"}`}
+            className={`flex size-11 items-center justify-center rounded-2xl text-fourth-700 transition-all duration-300 [box-shadow:3px_3px_12.5px_rgba(0,0,0,0.1)] hover:scale-105 md:size-12 ${merryToggle ? "bg-primary-500 text-utility-primary" : "bg-utility-primary"}`}
             onClick={() => setMerryToggle(!merryToggle)}
           >
-            <GoHeartFill className={`size-6`} />
+            <GoHeartFill className="size-5 md:size-6" />
           </button>
         </div>
       </div>
+    );
+  };
+
+  const ProfileDetail = ({ className = "flex" }) => {
+    return (
+      <div className={`flex-col justify-between text-fourth-900 ${className}`}>
+        {/* Profile name */}
+        <div className="flex gap-5">
+          <p className="text-2xl font-bold">
+            Daeny <span className="text-fourth-700">24</span>
+          </p>
+
+          <div className="flex items-center gap-1 text-fourth-700">
+            <HiMiniMapPin className="size-4 text-primary-200" />
+            <p>Bangkok, Thailand</p>
+          </div>
+        </div>
+
+        {/* Profile detail */}
+        {/* <div className="flex gap-5 lg:gap-8">
+          <div className="w-fu flex flex-col gap-3">
+            {detailList.map((list, index) => (
+              <p key={index} className="text-sm font-semibold text-fourth-900">
+                {list}
+              </p>
+            ))}
+          </div>
+
+          <div className="flex flex-col gap-3">
+            {profileData.map((data, index) => (
+              <p key={index} className="text-sm text-fourth-700">
+                {data}
+              </p>
+            ))}
+          </div>
+        </div> */}
+
+        <div className="text-sm md:max-w-full">
+          <div className="flex flex-col gap-2 lg:gap-3">
+            {detailList.map((list, index) => (
+              <div key={index} className="grid grid-cols-2">
+                <p className="font-semibold text-fourth-900">{list}</p>
+                <p className="text-fourth-700">{profileData[index]}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  const buttonIcon = [HiMiniChatBubbleOvalLeftEllipsis, IoMdEye];
+
+  const detailList = [
+    "Sexual identities",
+    "Sexual preferences",
+    "Racial preferences",
+    "Meeting interests",
+  ];
+
+  const profileData = ["Female", "Male", "Indefinite", "Long-term commitment"];
+
+  const [merryToggle, setMerryToggle] = useState(true);
+
+  return (
+    <div className="flex flex-col gap-6 md:flex-row md:justify-between lg:gap-10">
+      <div className="flex w-full justify-between gap-5 md:justify-start md:gap-10">
+        {/* Profile picture */}
+        <figure className="relative aspect-square min-w-[7rem] max-w-[10rem] overflow-hidden rounded-3xl md:max-w-[11rem]">
+          <img
+            src="/images/test1.png"
+            alt=""
+            className="h-full w-full object-cover"
+          />
+
+          <div className="absolute bottom-0 left-0 flex h-[1.5rem] w-[5.5rem] justify-end rounded-tr-xl bg-second-100 pr-2 pt-1 text-xs text-second-600">
+            Merry today
+          </div>
+        </figure>
+
+        {/* Profile desktop */}
+        <ProfileDetail className="hidden md:flex" />
+
+        {/* Button Mobile*/}
+        <ProfileButton className="flex md:hidden" />
+      </div>
+
+      {/* Profile mobile */}
+      <ProfileDetail className="flex gap-4 md:hidden" />
+
+      {/* Button desktop*/}
+      <ProfileButton className="hidden md:flex" />
     </div>
   );
 }
@@ -151,27 +180,30 @@ export default function MerryList() {
     <main className="flex flex-col bg-utility-bgMain">
       <NavBar />
 
-      <section className="container mx-auto flex flex-col gap-12 p-20">
+      <section className="container mx-auto flex max-w-[450px] flex-col gap-12 px-4 py-10 md:max-w-[768px] lg:max-w-[1024px] lg:p-20 xl:max-w-[1200px]">
         <header className="flex flex-col gap-6">
           <div className="flex flex-col gap-2">
-            <p className="font-semibold uppercase text-third-700">Merry list</p>
-            <p className="text-4xl font-extrabold text-second-500">
-              Let's know each other with Merry!
+            <p className="text-sm font-semibold uppercase text-third-700 lg:text-base">
+              Merry list
+            </p>
+            <p className="text-2xl font-extrabold text-second-500 md:text-4xl">
+              Let's know each other <br className="inline sm:hidden" /> with
+              Merry!
             </p>
           </div>
 
           {/* Merry count section */}
-          <div className="flex items-center justify-between gap-4">
+          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
             <div className="flex gap-4">
               <MerryCountBox count="16" text="Merry to you" />
               <MerryCountBox count="3" text="Merry match" twoHearts={true} />
             </div>
 
-            <div className="flex flex-col">
-              <p className="text-fourth-700">
+            <div className="flex flex-col items-end">
+              <p className="text-sm text-fourth-700 lg:text-base">
                 Merry limit today <span className="text-primary-400">2/20</span>
               </p>
-              <p className="self-end text-sm text-fourth-600">
+              <p className="text-xs text-fourth-600 lg:text-sm">
                 Reset in 12h...
               </p>
             </div>
