@@ -1,13 +1,15 @@
+import { useRouter } from "next/router";
+import axios from "axios";
+import React, { useState, useEffect, Fragment } from "react";
+
 import { GoHeartFill } from "react-icons/go";
 import {
   HiMiniMapPin,
   HiMiniChatBubbleOvalLeftEllipsis,
 } from "react-icons/hi2";
 import { IoMdEye } from "react-icons/io";
-
 import { NavBar, Footer } from "@/components/NavBar";
-import React, { useState } from "react";
-import { Fragment } from "react";
+
 
 function MerryCountBox({ count = 0, text = "Merry", twoHearts = false }) {
   return (
@@ -42,7 +44,7 @@ function ProfileBox({ profileData }) {
         className={`flex min-w-[165px] flex-col items-end justify-center gap-5 md:justify-start ${className}`}
       >
         {/* Merry match/Not match */}
-        {profileData.merry_match === true ? (
+        {profileData.is_match === true ? (
           <div className="flex items-center gap-1 rounded-full border-2 border-primary-500 px-4 py-[0.1rem] text-primary-500">
             {/* Two hearts icon */}
             <div className="relative w-[21.5px] text-primary-400">
@@ -104,7 +106,7 @@ function ProfileBox({ profileData }) {
           <div className="flex items-center gap-2 text-fourth-700">
             <HiMiniMapPin className="aspect-square w-4 min-w-4 text-primary-200" />
             <p>
-              {profileData.location}, {profileData.country}
+              {profileData.location_name}, {profileData.city_name}
             </p>
           </div>
         </div>
@@ -146,7 +148,7 @@ function ProfileBox({ profileData }) {
         {/* Profile picture */}
         <figure className="relative aspect-square min-w-[7rem] max-w-[10rem] overflow-hidden rounded-3xl md:max-w-[11rem]">
           <img
-            src={profileData?.image_profile[0]}
+            src={profileData?. profile_image}
             alt=""
             className="h-full w-full object-cover"
           />
@@ -175,59 +177,89 @@ function ProfileBox({ profileData }) {
 }
 
 export default function MerryList() {
-  const profileDataRaw = [
-    {
-      id: 1,
-      name: "Daeny",
-      age: 24,
-      location: "Bangkok",
-      country: "Thailand",
-      sexual_identity: "Male",
-      sexual_preference: "Female",
-      racial_preferences: "Indefinite",
-      meeting_interests: "Long-term commitment",
-      image_profile: [
-        "https://res.cloudinary.com/dg2ehb6zy/image/upload/v1733841816/test/pic/yoeapgceodompzxkul96.jpg",
-        "https://res.cloudinary.com/dg2ehb6zy/image/upload/v1733841817/test/pic/h77b5cosenizmriqoopd.jpg",
-      ],
-      merry_today: true,
-      merry_match: true,
-    },
-    {
-      id: 2,
-      name: "Luna",
-      age: 28,
-      location: "New York",
-      country: "United States",
-      sexual_identity: "Female",
-      sexual_preference: "Male",
-      racial_preferences: "American",
-      meeting_interests: "Short-term commitment",
-      image_profile: [
-        "https://res.cloudinary.com/dg2ehb6zy/image/upload/v1733841396/test/pic/xfs5ewcftykcfeef4ad0.jpg",
-        "https://res.cloudinary.com/dg2ehb6zy/image/upload/v1733841817/test/pic/h77b5cosenizmriqoopd.jpg",
-      ],
-      merry_today: false,
-      merry_match: false,
-    },
-    {
-      id: 3,
-      name: "Anna",
-      age: 31,
-      location: "Tokyo",
-      country: "Japan",
-      sexual_identity: "Female",
-      sexual_preference: "Male",
-      racial_preferences: "Asian",
-      meeting_interests: "Making friends",
-      image_profile: [
-        "https://res.cloudinary.com/dg2ehb6zy/image/upload/v1733841398/test/pic/k8jfqfycxqh1gzl3s9fa.jpg",
-        "https://res.cloudinary.com/dg2ehb6zy/image/upload/v1733841817/test/pic/h77b5cosenizmriqoopd.jpg",
-      ],
-      merry_today: false,
-      merry_match: true,
-    },
-  ];
+  const router = useRouter();
+  const { id: userMasterId } = router.query; // ดึง userMasterId จาก URL
+  const [profileDataRaw, setProfileDataRaw] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchProfiles = async () => {
+      if (!userMasterId) return; // รอจนกว่า userMasterId จะพร้อม
+
+      try {
+        const response = await axios.get(`/api/merry-list/${userMasterId}`); // เรียก API ด้วย userMasterId
+        setProfileDataRaw(response.data.matches || []); // บันทึกข้อมูลใน state
+      } catch (error) {
+        console.error("Error fetching profiles:", error);
+      } finally {
+        setLoading(false); // เลิกแสดง loading ไม่ว่าจะเกิด error หรือไม่
+      }
+    };
+
+    fetchProfiles();
+  }, [userMasterId]); // Fetch เมื่อ userMasterId เปลี่ยน
+
+  if (loading) {
+    return (
+      <main className="flex flex-col items-center justify-center h-screen bg-utility-bgMain">
+        <p className="text-xl text-primary-500">Loading...</p>
+      </main>
+    );
+  }
+
+  // const profileDataRaw = [
+  //   {
+  //     id: 1,
+  //     name: "Daeny",
+  //     age: 24,
+  //     location: "Bangkok",
+  //     country: "Thailand",
+  //     sexual_identity: "Male",
+  //     sexual_preference: "Female",
+  //     racial_preferences: "Indefinite",
+  //     meeting_interests: "Long-term commitment",
+  //     image_profile: [
+  //       "https://res.cloudinary.com/dg2ehb6zy/image/upload/v1733841816/test/pic/yoeapgceodompzxkul96.jpg",
+  //       "https://res.cloudinary.com/dg2ehb6zy/image/upload/v1733841817/test/pic/h77b5cosenizmriqoopd.jpg",
+  //     ],
+  //     merry_today: true,
+  //     merry_match: true,
+  //   },
+  //   {
+  //     id: 2,
+  //     name: "Luna",
+  //     age: 28,
+  //     location: "New York",
+  //     country: "United States",
+  //     sexual_identity: "Female",
+  //     sexual_preference: "Male",
+  //     racial_preferences: "American",
+  //     meeting_interests: "Short-term commitment",
+  //     image_profile: [
+  //       "https://res.cloudinary.com/dg2ehb6zy/image/upload/v1733841396/test/pic/xfs5ewcftykcfeef4ad0.jpg",
+  //       "https://res.cloudinary.com/dg2ehb6zy/image/upload/v1733841817/test/pic/h77b5cosenizmriqoopd.jpg",
+  //     ],
+  //     merry_today: false,
+  //     merry_match: false,
+  //   },
+  //   {
+  //     id: 3,
+  //     name: "Anna",
+  //     age: 31,
+  //     location: "Tokyo",
+  //     country: "Japan",
+  //     sexual_identity: "Female",
+  //     sexual_preference: "Male",
+  //     racial_preferences: "Asian",
+  //     meeting_interests: "Making friends",
+  //     image_profile: [
+  //       "https://res.cloudinary.com/dg2ehb6zy/image/upload/v1733841398/test/pic/k8jfqfycxqh1gzl3s9fa.jpg",
+  //       "https://res.cloudinary.com/dg2ehb6zy/image/upload/v1733841817/test/pic/h77b5cosenizmriqoopd.jpg",
+  //     ],
+  //     merry_today: false,
+  //     merry_match: true,
+  //   },
+  // ];
 
   return (
     <main className="flex flex-col bg-utility-bgMain">
