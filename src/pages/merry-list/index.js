@@ -64,7 +64,7 @@ function ProfileBox({ profileData }) {
 
         <div className="flex gap-4">
           {/* Chat button */}
-          {profileData.merry_match === true && (
+          {profileData.is_match === true && (
             <button
               className={`flex size-11 items-center justify-center rounded-2xl bg-utility-primary text-fourth-700 transition-all duration-300 [box-shadow:3px_3px_12.5px_rgba(0,0,0,0.1)] hover:scale-105 md:size-12`}
               onClick={() => {}}
@@ -99,7 +99,7 @@ function ProfileBox({ profileData }) {
         {/* Profile name */}
         <div className="flex items-center gap-5">
           <p className="min-w-fit text-2xl font-bold">
-            {profileData.name}{" "}
+            {profileData.name}
             <span className="text-fourth-700">{profileData.age}</span>
           </p>
 
@@ -136,8 +136,8 @@ function ProfileBox({ profileData }) {
   const detailData = [
     profileData.sexual_identity,
     profileData.sexual_preference,
-    profileData.racial_preferences,
-    profileData.meeting_interests,
+    profileData.racial_preference,
+    profileData.meeting_interest,
   ];
 
   const [merryToggle, setMerryToggle] = useState(true);
@@ -179,30 +179,45 @@ function ProfileBox({ profileData }) {
 export default function MerryList() {
   const router = useRouter();
   const { id: userMasterId } = router.query; // ดึง userMasterId จาก URL
-  const [profileDataRaw, setProfileDataRaw] = useState([]);
+  const [profileDataRaw, setProfileDataRaw] = useState([]); // เก็บ matches
   const [loading, setLoading] = useState(true);
+  const [totalTrue, setTotalTrue] = useState(0); // เก็บ total_true
+  const [totalFalse, setTotalFalse] = useState(0); // เก็บ total_false
 
   useEffect(() => {
     const fetchProfiles = async () => {
-      if (!userMasterId) return; // รอจนกว่า userMasterId จะพร้อม
+      if (!userMasterId) return; // ถ้า userMasterId ไม่มีค่า ให้หยุดรอ
 
       try {
-        const response = await axios.get(`/api/merry-list/${userMasterId}`); // เรียก API ด้วย userMasterId
-        setProfileDataRaw(response.data.matches || []); // บันทึกข้อมูลใน state
+        // เรียก API
+        const response = await axios.get(`/api/merry-list/${userMasterId}`);
+
+        // ตั้งค่าข้อมูลใน state
+        setProfileDataRaw(response.data.matches || []); // ข้อมูล matches
+        setTotalTrue(response.data.total_true || 0); // ข้อมูล total_true
+        setTotalFalse(response.data.total_false || 0); // ข้อมูล total_false
       } catch (error) {
         console.error("Error fetching profiles:", error);
       } finally {
-        setLoading(false); // เลิกแสดง loading ไม่ว่าจะเกิด error หรือไม่
+        setLoading(false); // เลิก loading
       }
     };
 
     fetchProfiles();
-  }, [userMasterId]); // Fetch เมื่อ userMasterId เปลี่ยน
-
+  }, [userMasterId]);
+  
   if (loading) {
     return (
       <main className="flex flex-col items-center justify-center h-screen bg-utility-bgMain">
-        <p className="text-xl text-primary-500">Loading...</p>
+   <span class="loading loading-spinner loading-lg"></span>
+      </main>
+    );
+  }
+
+  if (profileDataRaw.length === 0) {
+    return (
+      <main className="flex flex-col items-center justify-center h-screen bg-utility-bgMain">
+        <p className="text-xl text-primary-500">No profiles found.</p>
       </main>
     );
   }
@@ -280,8 +295,8 @@ export default function MerryList() {
           {/* Merry count section */}
           <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
             <div className="flex gap-4">
-              <MerryCountBox count="16" text="Merry to you" />
-              <MerryCountBox count="3" text="Merry match" twoHearts={true} />
+            <MerryCountBox count={totalTrue} text="Merry Match" />
+            <MerryCountBox count={totalFalse} text="Not a Match" />
             </div>
 
             <div className="flex flex-col items-end">
@@ -298,6 +313,7 @@ export default function MerryList() {
         {/* Match profile section */}
         <div className="flex flex-col gap-10">
           {profileDataRaw.map((profileData, index) => {
+             console.log('Profile:', profileData);
             return (
               <Fragment key={index}>
                 <ProfileBox profileData={profileData} />
