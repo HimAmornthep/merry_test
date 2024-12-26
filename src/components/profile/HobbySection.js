@@ -123,12 +123,12 @@ export default function HobbiesProfilePage({ updateHobbies, onOptionsChange }) {
   };
 
   return (
-    <div className="relative w-full" ref={dropdownRef}>
+    <div className="relative w-full flex flex-col gap-1" ref={dropdownRef}>
       {" "}
       {/* ใช้ ref ที่นี่ */}
       <label
         htmlFor="hobbies"
-        className="block text-sm font-semibold text-gray-700"
+        className="block text-base font-normal text-gray-700"
       >
         Hobbies / Interests (Maximum 10)
       </label>
@@ -140,7 +140,7 @@ export default function HobbiesProfilePage({ updateHobbies, onOptionsChange }) {
           value={inputValue}
           onChange={handleInputChange}
           onFocus={handleInputFocus}
-          className="rounded-lg border border-gray-300 bg-white p-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
+          className="rounded-lg border border-fourth-400 bg-white p-2 focus:outline-none focus:ring-2 focus:ring-blue-400 h-12"
         />
 
         {/* อันนี้ตัวแก้ไขโดยไม่ให้เพิ่ม option */}

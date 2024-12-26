@@ -416,7 +416,7 @@ export default function ProfilePage() {
                     </span>
                     <input
                       type="text"
-                      className="h-12 w-full rounded-[8px] border border-fourth-400 py-3 pl-3 pr-4 lg:w-full"
+                      className="h-12 w-full rounded-[8px] border border-fourth-400 py-3 pl-3 pr-4 focus:outline-none focus:ring-2 focus:ring-blue-400 lg:w-full"
                       value={name}
                       onChange={(e) => setName(e.target.value)}
                     />
@@ -487,7 +487,7 @@ export default function ProfilePage() {
                     <input
                       type="text"
                       placeholder="At least 6 character"
-                      className="h-12 w-full rounded-[8px] border border-fourth-400 py-3 pl-3 pr-4 placeholder-fourth-900"
+                      className="h-12 w-full rounded-[8px] border border-fourth-400 py-3 pl-3 pr-4 placeholder-fourth-900 focus:outline-none focus:ring-2 focus:ring-blue-400"
                       value={username}
                       onChange={(e) => setUsername(e.target.value)}
                     />
@@ -603,7 +603,7 @@ export default function ProfilePage() {
                   />
                 </label> */}
 
-                <div className="mt-6">
+                <div className="hobby-input">
                   <HobbiesProfilePage
                     updateHobbies={updateHobbies}
                     onOptionsChange={handleUpdateOptions}
