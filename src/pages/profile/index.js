@@ -7,13 +7,14 @@ import { PreviewProfile } from "@/components/profile/PreviewProfile";
 import axios from "axios";
 import { jwtDecode } from "jwt-decode";
 import { useAuth } from "@/contexts/AuthContext";
+import { useRouter } from "next/router";
 
 export default function ProfilePage() {
   const [date, setDate] = useState("");
   const [userId, setUserId] = useState("");
   const [name, setName] = useState("");
   const [age, setAge] = useState("");
-  const [location, setLocation] = useState("");
+  const [location, setLocation] = useState([]);
   const [allLocation, setAllLocation] = useState([]);
   const [city, setCity] = useState("");
   const [allCity, setAllCity] = useState([]);
@@ -34,9 +35,9 @@ export default function ProfilePage() {
   const [selectedOptions, setSelectedOptions] = useState([]);
 
   // console.log("image in state avatar", avatar);
-  // console.log("UserID", userId);
 
   const { deleteuser } = useAuth();
+  const router = useRouter();
 
   // รับค่าจากไฟล์ HobbySection และอัปเดตที่นี่ เพื่อส่งค่าไปยังหน้า PreviewProfile
   const handleUpdateOptions = (options) => {
@@ -89,6 +90,7 @@ export default function ProfilePage() {
   const getAddress = async () => {
     try {
       const result = await axios.get(`/api/address`);
+      // console.log("resultAddress", result);
 
       setAllCity(result.data.cities);
       setAllLocation(
@@ -153,6 +155,111 @@ export default function ProfilePage() {
       setAvatars(formattedAvatar);
     } catch (error) {
       console.log(error);
+    }
+  };
+
+  // แยกรุปภาพเดิมที่มี url แล้วกับรุปภาพใหม่ที่เป้น File
+  const isValidUrl = (url) => {
+    try {
+      new URL(url); // ถ้าเป็น URL ที่ถูกต้องจะไม่เกิดข้อผิดพลาด
+      return true;
+    } catch (e) {
+      return false;
+    }
+  };
+
+  const [validUrls, setValidUrls] = useState([]); // เก็บ URL ที่ถูกต้อง
+  const [filesToUpload, setFilesToUpload] = useState([]); // เก็บไฟล์ที่ต้องอัปโหลด
+
+  // ฟังก์ชันเพื่อแยก URL และ File
+  const processAvatar = () => {
+    let tempValidUrls = [];
+    let tempFilesToUpload = [];
+
+    Object.keys(avatar).forEach((key) => {
+      const item = avatar[key];
+      if (item.image_url && isValidUrl(item.image_url)) {
+        tempValidUrls.push(item.image_url); // เก็บ URL ที่ถูกต้อง
+      } else if (item instanceof File) {
+        tempFilesToUpload.push(item); // เก็บไฟล์ที่ไม่ใช่ URL
+      }
+    });
+
+    // อัปเดต state สำหรับ URL ที่ถูกต้อง
+    setValidUrls(tempValidUrls);
+    // อัปเดต state สำหรับไฟล์ที่ต้องอัปโหลด
+    setFilesToUpload(tempFilesToUpload);
+  };
+
+  // เรียกฟังก์ชันเพื่อประมวลผล avatar เมื่อโหลดข้อมูล
+  useEffect(() => {
+    processAvatar();
+  }, [avatar]);
+
+  // แสดงผลลัพธ์
+  // console.log("Valid URLs:", validUrls); // แสดง URL ที่ถูกต้อง
+  // console.log("Files to upload:", filesToUpload); // แสดงไฟล์ที่ต้องอัปโหลด
+
+  // function handler update user profile
+  const handleUpdateProfile = async () => {
+    const token = localStorage.getItem("token");
+    if (!token) {
+      alert("You are not logged in. Please log in again.");
+      router.push("/");
+      return;
+    }
+
+    const { id } = jwtDecode(token);
+    if (!id) {
+      alert("Invalid user ID.");
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append("name", name);
+    formData.append("date_of_birth", date);
+    formData.append("city", city);
+    formData.append("location", location);
+    formData.append("gender", sexIdentity);
+    formData.append("sexual_preference", sexPref);
+    formData.append("racial_preference", racialPref);
+    formData.append("meeting_interest", meetingInterest);
+    formData.append("hobbies", JSON.stringify(selectedOptions)); // แปลง array เป็น JSON String เพื่อให้ส่งผ่าน formData ได้
+    formData.append("about_me", aboutMe);
+    formData.append("validUrls", validUrls);
+    formData.append("filesToUpload", filesToUpload);
+
+    for (let filesToUploadKey in filesToUpload) {
+      formData.append("filesToUpload", filesToUpload[filesToUploadKey]);
+    }
+
+    try {
+      const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
+      const result = await axios.put(
+        `${apiBaseUrl}/api/users/profile/${id}`,
+        formData,
+        {
+          headers: {
+            "Content-Type": "multipart/form-data",
+            Authorization: `Bearer ${token}`,
+          },
+        },
+      );
+      console.log("PUT Result:", result.data);
+
+      // ตรวจสอบว่า API ส่ง URL ของรูปภาพใหม่กลับมาหรือไม่
+      // if (result.data.icon_url) {
+      //   setPackageData((prev) => ({
+      //     ...prev,
+      //     icon_url: response.data.icon_url, // ใช้ URL ใหม่จาก API
+      //   }));
+      // }
+
+      alert("Profile updated successfully!");
+      router.push("/profile");
+    } catch (error) {
+      console.error("Error updating profile:", error);
+      alert("Failed to update profile.");
     }
   };
 
@@ -275,6 +382,7 @@ export default function ProfilePage() {
                   <CustomButton
                     buttonType="primary"
                     customStyle="w-[162px] text-base font-bold"
+                    onClick={handleUpdateProfile}
                   >
                     Update Profile
                   </CustomButton>
@@ -675,6 +783,7 @@ export default function ProfilePage() {
             <CustomButton
               buttonType="primary"
               customStyle="w-[162px] text-base font-bold"
+              onClick={handleUpdateProfile}
             >
               Update Profile
             </CustomButton>
