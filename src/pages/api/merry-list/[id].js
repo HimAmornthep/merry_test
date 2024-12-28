@@ -14,30 +14,31 @@ export default async function handler(req, res) {
 
       // Query 1: Match List
       const matchQuery = `
-        SELECT 
-          User_Profiles.name AS name,
-          User_Profiles.age AS age,
-          Gender.gender_name AS sexual_identity,
-          SexualPreference.gender_name AS sexual_preference,
-          Meeting_Interest.meeting_name AS meeting_interest,
-          Racial_Identity.racial_name AS racial_preference,
-          City.city_name AS city_name,
-          Location.location_name AS location_name,
-          Image_Profiles.image_profile_url AS profile_image,
-          Matching.is_match AS is_match
-        FROM Matching
-        JOIN User_Profiles ON Matching.user_other = User_Profiles.profile_id
-        JOIN Gender ON User_Profiles.gender_id = Gender.gender_id
-        JOIN Gender AS SexualPreference ON User_Profiles.sexual_preference_id = SexualPreference.gender_id
-        JOIN Meeting_Interest ON User_Profiles.meeting_interest_id = Meeting_Interest.meeting_interest_id
-        JOIN Racial_Identity ON User_Profiles.racial_preference_id = Racial_Identity.racial_id
-        JOIN City ON User_Profiles.city_id = City.city_id
-        JOIN Location ON City.location_id = Location.location_id
-        LEFT JOIN Image_Profiles ON User_Profiles.profile_id = Image_Profiles.profile_id
-          AND Image_Profiles.is_primary = true
-        WHERE Matching.user_master = $1
-        ORDER BY Matching.is_match DESC, User_Profiles.name ASC;
-      `;
+  SELECT 
+    Matching.user_other AS user_other, -- เพิ่ม user_other
+    User_Profiles.name AS name,
+    User_Profiles.age AS age,
+    Gender.gender_name AS sexual_identity,
+    SexualPreference.gender_name AS sexual_preference,
+    Meeting_Interest.meeting_name AS meeting_interest,
+    Racial_Identity.racial_name AS racial_preference,
+    City.city_name AS city_name,
+    Location.location_name AS location_name,
+    Image_Profiles.image_profile_url AS profile_image,
+    Matching.is_match AS is_match
+  FROM Matching
+  JOIN User_Profiles ON Matching.user_other = User_Profiles.profile_id
+  JOIN Gender ON User_Profiles.gender_id = Gender.gender_id
+  JOIN Gender AS SexualPreference ON User_Profiles.sexual_preference_id = SexualPreference.gender_id
+  JOIN Meeting_Interest ON User_Profiles.meeting_interest_id = Meeting_Interest.meeting_interest_id
+  JOIN Racial_Identity ON User_Profiles.racial_preference_id = Racial_Identity.racial_id
+  JOIN City ON User_Profiles.city_id = City.city_id
+  JOIN Location ON City.location_id = Location.location_id
+  LEFT JOIN Image_Profiles ON User_Profiles.profile_id = Image_Profiles.profile_id
+    AND Image_Profiles.is_primary = true
+  WHERE Matching.user_master = $1
+  ORDER BY Matching.is_match DESC, User_Profiles.name ASC;
+`;
 
       // Query 2: Count True/False
       const countQuery = `

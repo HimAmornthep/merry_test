@@ -9,6 +9,7 @@ import {
 } from "react-icons/hi2";
 import { IoMdEye } from "react-icons/io";
 import { NavBar, Footer } from "@/components/NavBar";
+import { set } from "mongoose";
 
 
 function MerryCountBox({ count = 0, text = "Merry", twoHearts = false }) {
@@ -37,8 +38,17 @@ function MerryCountBox({ count = 0, text = "Merry", twoHearts = false }) {
   );
 }
 
-function ProfileBox({ profileData }) {
+function ProfileBox({ profileData, handleDelete }) {
+  const [merryToggle, setMerryToggle] = useState(true);
   const ProfileButton = ({ className = "flex" }) => {
+    const toggleMerry = () => {
+      if (merryToggle) {
+        console.log("Deleting user_other:", profileData.user_other);
+        handleDelete(profileData.user_other); // ใช้งาน handleDelete จาก props
+      }
+      setMerryToggle(!merryToggle); // สลับสถานะ merryToggle
+    };
+
     return (
       <div
         className={`flex min-w-[165px] flex-col items-end justify-center gap-5 md:justify-start ${className}`}
@@ -83,11 +93,15 @@ function ProfileBox({ profileData }) {
 
           {/* Merry button */}
           <button
-            className={`flex size-11 items-center justify-center rounded-2xl text-fourth-700 transition-all duration-300 [box-shadow:3px_3px_12.5px_rgba(0,0,0,0.1)] hover:scale-105 md:size-12 ${merryToggle ? "bg-primary-500 text-utility-primary" : "bg-utility-primary"}`}
-            onClick={() => setMerryToggle(!merryToggle)}
+            className={`flex size-11 items-center justify-center rounded-2xl text-fourth-700 transition-all duration-300 [box-shadow:3px_3px_12.5px_rgba(0,0,0,0.1)] hover:scale-105 md:size-12 ${
+              merryToggle ? "bg-primary-500 text-utility-primary" : "bg-utility-primary"
+            }`}
+            onClick={toggleMerry} // เรียกใช้ฟังก์ชัน toggleMerry
           >
             <GoHeartFill className="size-5 md:size-6" />
           </button>
+
+          
         </div>
       </div>
     );
@@ -140,7 +154,7 @@ function ProfileBox({ profileData }) {
     profileData.meeting_interest,
   ];
 
-  const [merryToggle, setMerryToggle] = useState(true);
+
 
   return (
     <div className="flex flex-col gap-6 md:flex-row md:justify-between">
@@ -205,6 +219,21 @@ export default function MerryList() {
 
     fetchProfiles();
   }, [userMasterId]);
+
+  const handleDelete = async (userOther) => {
+    try {
+      console.log("Deleting user_other:", userOther);
+      const response = await axios.delete(`/api/merry-list/${userMasterId}`, {
+        data: { user_other: userOther },
+      });
+      console.log("Deleted:", response.data);
+      setProfileDataRaw((prev) =>
+        prev.filter((profile) => profile.user_other !== userOther)
+      );
+    } catch (error) {
+      console.error("Error deleting user_other:", error);
+    }
+  };
   
   if (loading) {
     return (
@@ -262,7 +291,11 @@ export default function MerryList() {
              console.log('Profile:', profileData);
             return (
               <Fragment key={index}>
-                <ProfileBox profileData={profileData} />
+  <ProfileBox
+      profileData={profileData}
+      handleDelete={handleDelete} // ต้องส่ง handleDelete เป็น prop
+    />
+
                 {index !== profileDataRaw.length - 1 && (
                   <div className="h-[1px] w-full bg-fourth-300"></div>
                 )}
