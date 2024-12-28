@@ -7,6 +7,18 @@ body {
   font-family: "Nunito", sans-serif;
 }
 
+/* Chat scrollbar */
+.scrollable-element {
+  scrollbar-width: thin;
+  scrollbar-color: transparent transparent;
+  transition: scrollbar-color 0.2s ease-in-out;
+}
+
+.scrollable-element:hover,
+.scrollable-element:focus-within {
+  scrollbar-color: #2a2e3f transparent;
+}
+
 @layer base {
   :root {
     --background: 0 0% 100%;
