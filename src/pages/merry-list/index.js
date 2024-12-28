@@ -222,60 +222,6 @@ export default function MerryList() {
     );
   }
 
-  // const profileDataRaw = [
-  //   {
-  //     id: 1,
-  //     name: "Daeny",
-  //     age: 24,
-  //     location: "Bangkok",
-  //     country: "Thailand",
-  //     sexual_identity: "Male",
-  //     sexual_preference: "Female",
-  //     racial_preferences: "Indefinite",
-  //     meeting_interests: "Long-term commitment",
-  //     image_profile: [
-  //       "https://res.cloudinary.com/dg2ehb6zy/image/upload/v1733841816/test/pic/yoeapgceodompzxkul96.jpg",
-  //       "https://res.cloudinary.com/dg2ehb6zy/image/upload/v1733841817/test/pic/h77b5cosenizmriqoopd.jpg",
-  //     ],
-  //     merry_today: true,
-  //     merry_match: true,
-  //   },
-  //   {
-  //     id: 2,
-  //     name: "Luna",
-  //     age: 28,
-  //     location: "New York",
-  //     country: "United States",
-  //     sexual_identity: "Female",
-  //     sexual_preference: "Male",
-  //     racial_preferences: "American",
-  //     meeting_interests: "Short-term commitment",
-  //     image_profile: [
-  //       "https://res.cloudinary.com/dg2ehb6zy/image/upload/v1733841396/test/pic/xfs5ewcftykcfeef4ad0.jpg",
-  //       "https://res.cloudinary.com/dg2ehb6zy/image/upload/v1733841817/test/pic/h77b5cosenizmriqoopd.jpg",
-  //     ],
-  //     merry_today: false,
-  //     merry_match: false,
-  //   },
-  //   {
-  //     id: 3,
-  //     name: "Anna",
-  //     age: 31,
-  //     location: "Tokyo",
-  //     country: "Japan",
-  //     sexual_identity: "Female",
-  //     sexual_preference: "Male",
-  //     racial_preferences: "Asian",
-  //     meeting_interests: "Making friends",
-  //     image_profile: [
-  //       "https://res.cloudinary.com/dg2ehb6zy/image/upload/v1733841398/test/pic/k8jfqfycxqh1gzl3s9fa.jpg",
-  //       "https://res.cloudinary.com/dg2ehb6zy/image/upload/v1733841817/test/pic/h77b5cosenizmriqoopd.jpg",
-  //     ],
-  //     merry_today: false,
-  //     merry_match: true,
-  //   },
-  // ];
-
   return (
     <main className="flex flex-col bg-utility-bgMain">
       <NavBar />
