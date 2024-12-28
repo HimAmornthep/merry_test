@@ -9,7 +9,7 @@ import {
 } from "react-icons/hi2";
 import { IoMdEye } from "react-icons/io";
 import { NavBar, Footer } from "@/components/NavBar";
-import { set } from "mongoose";
+
 
 
 function MerryCountBox({ count = 0, text = "Merry", twoHearts = false }) {
@@ -35,19 +35,21 @@ function MerryCountBox({ count = 0, text = "Merry", twoHearts = false }) {
 
       <p className="text-sm font-medium text-fourth-700 md:text-base">{text}</p>
     </div>
-  );
-}
+    );
+  }
 
-function ProfileBox({ profileData, handleDelete }) {
+function ProfileBox({ profileData, updateMerryToggle  }) {
   const [merryToggle, setMerryToggle] = useState(true);
+
   const ProfileButton = ({ className = "flex" }) => {
-    const toggleMerry = () => {
-      if (merryToggle) {
-        console.log("Deleting user_other:", profileData.user_other);
-        handleDelete(profileData.user_other); // ใช้งาน handleDelete จาก props
-      }
-      setMerryToggle(!merryToggle); // สลับสถานะ merryToggle
+
+    const toggleMerry = () => {  // ฟังก์ชันที่ใช้สลับสถานะของปุ่ม Merry ระหว่างสีเทาและสีแดง
+      const newToggleState = !merryToggle;
+      setMerryToggle(newToggleState); 
+      updateMerryToggle(profileData.user_other, newToggleState); 
+      // ส่งข้อมูล user_other และสถานะของปุ่ม Merry ไปยังฟังก์ชัน updateMerryToggle ที่อยู่ใน ProfileBox
     };
+
 
     return (
       <div
@@ -189,60 +191,85 @@ function ProfileBox({ profileData, handleDelete }) {
     </div>
   );
 }
-
 export default function MerryList() {
   const router = useRouter();
-  const { id: userMasterId } = router.query; // ดึง userMasterId จาก URL
-  const [profileDataRaw, setProfileDataRaw] = useState([]); // เก็บ matches
+  const { id: userMasterId } = router.query;
+  const [profileDataRaw, setProfileDataRaw] = useState([]);
+  const [profilesToDelete, setProfilesToDelete] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [totalTrue, setTotalTrue] = useState(0); // เก็บ total_true
-  const [totalFalse, setTotalFalse] = useState(0); // เก็บ total_false
+  const [totalTrue, setTotalTrue] = useState(0);
+  const [totalFalse, setTotalFalse] = useState(0);
 
+  // Fetch profiles on page load
   useEffect(() => {
     const fetchProfiles = async () => {
-      if (!userMasterId) return; // ถ้า userMasterId ไม่มีค่า ให้หยุดรอ
-
+      if (!userMasterId) return; // Validate userMasterId
       try {
-        // เรียก API
         const response = await axios.get(`/api/merry-list/${userMasterId}`);
-
-        // ตั้งค่าข้อมูลใน state
-        setProfileDataRaw(response.data.matches || []); // ข้อมูล matches
-        setTotalTrue(response.data.total_true || 0); // ข้อมูล total_true
-        setTotalFalse(response.data.total_false || 0); // ข้อมูล total_false
+        setProfileDataRaw(response.data.matches || []);
+        setTotalTrue(response.data.total_true || 0);
+        setTotalFalse(response.data.total_false || 0);
       } catch (error) {
         console.error("Error fetching profiles:", error);
       } finally {
-        setLoading(false); // เลิก loading
+        setLoading(false);
       }
     };
+
+    // Check for any profiles to delete from sessionStorage
+    const storedProfiles = JSON.parse(
+      sessionStorage.getItem("profilesToDelete") || "[]"
+    );
+    if (storedProfiles.length > 0) {
+      deleteProfiles(storedProfiles); // Handle deletion on reload
+    }
 
     fetchProfiles();
   }, [userMasterId]);
 
-  const handleDelete = async (userOther) => {
+  // Delete profiles
+  const deleteProfiles = async (profiles) => {
+    if (!userMasterId || profiles.length === 0) {
+      console.warn("Invalid userMasterId or empty profiles list.");
+      return;
+    }
+
     try {
-      console.log("Deleting user_other:", userOther);
       const response = await axios.delete(`/api/merry-list/${userMasterId}`, {
-        data: { user_other: userOther },
+        data: { users_to_delete: profiles },
       });
-      console.log("Deleted:", response.data);
-      setProfileDataRaw((prev) =>
-        prev.filter((profile) => profile.user_other !== userOther)
-      );
+      console.log("Deleted profiles:", profiles);
+      sessionStorage.removeItem("profilesToDelete"); 
+      //ลบข้อมูลที่เป็นปุ่ม Merry สีเทา ซึ่งเป็นปุ่มถูกเลือกออกจาก sessionStorage
+      // โดยใช้ฟังก์ชัน removeItem ช่วยลบข้อมูลออกจาก sessionStorage
+      // ทำการลบปุ่ม Merry สีเทา ออกจากหน้าเว็บ 
     } catch (error) {
-      console.error("Error deleting user_other:", error);
+      console.error("Error deleting profiles:", error);
     }
   };
-  
+
+  // Update profiles to delete
+  const updateMerryToggle = (userOther, isActive) => {
+    // ใช้เพื่อเปลี่ยนสถานะของปุ่ม Merry ระหว่างสีเทาและสีแดง และ เพิ่ม - ลบ user_other ที่ต้องการลบเข้าไปใน state ที่ชื่อ profilesToDelete
+    const updatedProfiles = isActive
+      ? profilesToDelete.filter((id) => id !== userOther)
+      : [...profilesToDelete, userOther];
+
+    setProfilesToDelete(updatedProfiles);
+    sessionStorage.setItem("profilesToDelete", JSON.stringify(updatedProfiles));
+     // ทำการเก็บข้อมูลที่ต้องการลบไว้ใน sessionStorage โดยใช้ฟังก์ชัน setItem โดยเก็บข้อมูลในรูปแบบของ JSON string
+  };
+
+  // Loading state
   if (loading) {
     return (
-      <main className="flex flex-col items-center justify-center h-screen bg-utility-bgMain">
-   <span class="loading loading-spinner loading-lg"></span>
+      <main className="flex items-center justify-center h-screen bg-utility-bgMain">
+        <span className="loading loading-spinner loading-lg"></span>
       </main>
     );
   }
 
+  // No profiles found
   if (profileDataRaw.length === 0) {
     return (
       <main className="flex flex-col items-center justify-center h-screen bg-utility-bgMain">
@@ -250,7 +277,6 @@ export default function MerryList() {
       </main>
     );
   }
-
   return (
     <main className="flex flex-col bg-utility-bgMain">
       <NavBar />
@@ -267,41 +293,31 @@ export default function MerryList() {
             </p>
           </div>
 
-          {/* Merry count section */}
           <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
             <div className="flex gap-4">
-            <MerryCountBox count={totalTrue} text="Merry Match" />
-            <MerryCountBox count={totalFalse} text="Not a Match" />
+              <MerryCountBox count={totalTrue} text="Merry Match" />
+              <MerryCountBox count={totalFalse} text="Not a Match" />
             </div>
 
             <div className="flex flex-col items-end">
               <p className="text-sm text-fourth-700 lg:text-base">
                 Merry limit today <span className="text-primary-400">2/20</span>
               </p>
-              <p className="text-xs text-fourth-600 lg:text-sm">
-                Reset in 12h...
-              </p>
+              <p className="text-xs text-fourth-600 lg:text-sm">Reset in 12h...</p>
             </div>
           </div>
         </header>
 
-        {/* Match profile section */}
         <div className="flex flex-col gap-10">
-          {profileDataRaw.map((profileData, index) => {
-             console.log('Profile:', profileData);
-            return (
-              <Fragment key={index}>
-  <ProfileBox
-      profileData={profileData}
-      handleDelete={handleDelete} // ต้องส่ง handleDelete เป็น prop
-    />
-
-                {index !== profileDataRaw.length - 1 && (
-                  <div className="h-[1px] w-full bg-fourth-300"></div>
-                )}
-              </Fragment>
-            );
-          })}
+          {profileDataRaw.map((profileData) => (
+            <Fragment key={profileData.user_other}>
+              <ProfileBox  // ส่งข้อมูล profileData และฟังก์ชัน updateMerryToggle ไปยัง ProfileBox
+                profileData={profileData} 
+                updateMerryToggle={updateMerryToggle}   
+              />
+              <div className="h-[1px] w-full bg-fourth-300"></div>
+            </Fragment>
+          ))}
         </div>
       </section>
 
