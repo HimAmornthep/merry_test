@@ -36,8 +36,8 @@ export function NavBar() {
   const menuList = [
     { name: "Profile", logo: HiMiniUser, path: "/profile" },
     { name: "Merry list", logo: GoHeartFill, path: "/merry-list" },
-    { name: "Merry Membership", logo: RiBox3Fill, path: "/" },
-    { name: "Compliant", logo: IoWarning, path: "/complain" },
+    { name: "Merry Membership", logo: RiBox3Fill, path: "/packages" },
+    { name: "Compliant", logo: IoWarning, path: "/complaint" },
   ];
 
   // Disable scroll on mobile dropdown
