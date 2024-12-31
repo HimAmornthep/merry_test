@@ -36,20 +36,20 @@ export default function handler(req, res) {
         async ({
           chatRoomId,
           inputMessage,
+          imageUrls,
           userId,
           messageType,
-          imageUrls,
         }) => {
           if (
             !chatRoomId ||
-            !inputMessage ||
+            (!inputMessage && imageUrls.length === 0) ||
             !userId ||
-            messageType.length === 0 ||
-            typeof inputMessage !== "string"
+            messageType.length === 0
           ) {
             console.error("Invalid data for sending message:", {
               chatRoomId,
               inputMessage,
+              imageUrls,
               userId,
               messageType,
             });
@@ -60,7 +60,7 @@ export default function handler(req, res) {
             message_id: db.collection("dummy").doc().id,
             sender_id: userId,
             type: messageType,
-            content: inputMessage,
+            content: inputMessage || null,
             image_urls: imageUrls || [],
             timestamp: Timestamp.now(),
           };
