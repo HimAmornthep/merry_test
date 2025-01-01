@@ -1,14 +1,28 @@
 import { db } from "@/utils/adminFirebase";
 import connectionPool from "@/utils/db";
+import { protectUser } from "@/middleware/protectUser";
+
+function runMiddleware(req, res, fn) {
+  return new Promise((resolve, reject) => {
+    fn(req, res, (result) => {
+      if (result instanceof Error) {
+        return reject(result);
+      }
+      return resolve(result);
+    });
+  });
+}
 
 export default async function handler(req, res) {
   if (req.method !== "GET") {
     return res.status(405).json({ error: "Method not allowed" });
   }
 
-  const { chatRoomId, userId } = req.query;
-
   try {
+    await runMiddleware(req, res, protectUser);
+
+    const { chatRoomId, userId } = req.query;
+
     // SQL: Fetch the chat room information to determine user roles
     const chatRoomUsersQuery = `
       SELECT user_master, user_other

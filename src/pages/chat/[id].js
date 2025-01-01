@@ -6,6 +6,7 @@ import { FiX } from "react-icons/fi";
 
 import { io } from "socket.io-client";
 import axios from "axios";
+import apiClient from "@/utils/jwtInterceptor";
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/router";
 
@@ -26,12 +27,11 @@ export default function Chat() {
   const [imageFiles, setImageFiles] = useState({});
   const [selectedImage, setSelectedImage] = useState(null);
   const [fileInputKey, setFileInputKey] = useState(Date.now());
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
+  const [isAtBottom, setIsAtBottom] = useState(true);
 
   const { state } = useAuth();
-
   const { id: chatRoomId } = router.query;
-
-  const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
 
   // File input handle
   const handleFileChange = (event) => {
@@ -167,8 +167,8 @@ export default function Chat() {
         setUserId(state.user?.id);
 
         // Fetch other user data and old messages
-        const messagesResponse = await axios.get(
-          `${apiBaseUrl}/api/chat/chatHistory?chatRoomId=${chatRoomId}&userId=${state.user?.id}`,
+        const messagesResponse = await apiClient.get(
+          `/api/chat/chatHistory?chatRoomId=${chatRoomId}&userId=${state.user?.id}`,
         );
 
         if (messagesResponse.data?.messages) {
@@ -187,34 +187,19 @@ export default function Chat() {
 
   // Scroll to the bottom after fectching old messages
   useEffect(() => {
-    if (scrollRef.current) {
+    if (messages.length === 0 || !scrollRef.current) return;
+
+    const lastMessage = messages[messages.length - 1];
+    const isSender = lastMessage?.sender_id === userId;
+
+    if (isInitialLoad || isSender) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
-  }, [messages]);
 
-  const [isAtBottom, setIsAtBottom] = useState(true);
-
-  // Add scroll event listener
-  useEffect(() => {
-    const handleScroll = () => {
-      if (scrollRef.current) {
-        const { scrollTop, scrollHeight, clientHeight } = scrollRef.current;
-        setIsAtBottom(scrollTop + clientHeight >= scrollHeight - 1);
-      }
-    };
-
-    const scrollElement = scrollRef.current;
-
-    if (scrollElement) {
-      scrollElement.addEventListener("scroll", handleScroll);
+    if (isInitialLoad) {
+      setIsInitialLoad(false);
     }
-
-    return () => {
-      if (scrollElement) {
-        scrollElement.removeEventListener("scroll", handleScroll);
-      }
-    };
-  }, []);
+  }, [messages, userId]);
 
   // Make typing bar push messages div when adding images
   useEffect(() => {
@@ -249,12 +234,19 @@ export default function Chat() {
               </p>
             </div>
 
-            {/* Messages section */}
+            {/* Message section */}
             <div
               ref={scrollRef}
               className="scrollable-element flex-grow overflow-y-auto px-4 lg:px-20"
+              onScroll={() => {
+                if (scrollRef.current) {
+                  const { scrollTop, scrollHeight, clientHeight } =
+                    scrollRef.current;
+                  setIsAtBottom(scrollTop + clientHeight >= scrollHeight - 1);
+                }
+              }}
             >
-              <div className="container mx-auto flex flex-col items-center justify-start gap-8">
+              <div className="flex flex-col items-center justify-start gap-8">
                 {/* Alert section */}
                 {messages.length === 0 && (
                   <div className="mt-10 flex max-w-fit items-center justify-center gap-5 rounded-2xl border-2 border-second-300 bg-second-100 p-4 lg:mt-28 lg:px-20 lg:py-6">
@@ -308,7 +300,7 @@ export default function Chat() {
                         <div className="flex items-end gap-4">
                           {/* Other user image */}
                           {msg.sender_id !== userId && (
-                            <div className="flex size-12 overflow-hidden rounded-full">
+                            <div className="flex aspect-square min-w-12 max-w-12 overflow-hidden rounded-full">
                               {isLastOfGroup && (
                                 <img
                                   src={otherUserData?.image_profile}
@@ -343,7 +335,17 @@ export default function Chat() {
                                   <img
                                     src={image}
                                     alt=""
-                                    className="h-full max-h-[27.5rem] w-full max-w-[27.5rem] rounded-2xl object-cover"
+                                    className="h-full w-full max-w-[22.5rem] rounded-2xl object-cover lg:max-h-[27.5rem] lg:max-w-[27.5rem]"
+                                    onLoad={() => {
+                                      if (
+                                        (isInitialLoad ||
+                                          msg.sender_id === userId) &&
+                                        scrollRef.current
+                                      ) {
+                                        scrollRef.current.scrollTop =
+                                          scrollRef.current.scrollHeight;
+                                      }
+                                    }}
                                   />
                                 </button>
                               ))}
@@ -356,110 +358,107 @@ export default function Chat() {
               </div>
             </div>
 
-            {/* Typing section */}
-            <div className="w-full">
-              {/* Typing bar */}
-              <div className="flex min-h-16 w-full items-end gap-5 border-t border-fourth-800 bg-utility-bg px-4 py-4 lg:min-h-20">
-                {/* Upload image button */}
-                <div className="flex aspect-square h-[54px] items-center justify-center">
-                  <input
-                    key={fileInputKey}
-                    type="file"
-                    id="upload"
-                    name="imageUrl"
-                    onChange={handleFileChange}
-                    disabled={Object.keys(imageFiles).length >= 5}
-                    className="hidden"
-                  />
-                  <label
-                    htmlFor="upload"
-                    className={`flex items-center justify-center rounded-full bg-fourth-100 p-3 text-fourth-600 transition-colors duration-300 ${Object.keys(imageFiles).length < 5 ? "cursor-pointer hover:bg-fourth-300" : "cursor-not-allowed opacity-60"}`}
-                  >
-                    <PiImageFill className="size-6" />
-                  </label>
-                </div>
+            {/* Typing bar */}
+            <div className="flex min-h-16 w-full items-end gap-5 border-t border-fourth-800 bg-utility-bg px-4 py-4 lg:min-h-20">
+              {/* Upload image button */}
+              <div className="flex aspect-square h-[54px] items-center justify-center">
+                <input
+                  key={fileInputKey}
+                  type="file"
+                  id="upload"
+                  name="imageUrl"
+                  onChange={handleFileChange}
+                  disabled={Object.keys(imageFiles).length >= 5}
+                  className="hidden"
+                />
+                <label
+                  htmlFor="upload"
+                  className={`flex items-center justify-center rounded-full bg-fourth-100 p-3 text-fourth-600 transition-colors duration-300 ${Object.keys(imageFiles).length < 5 ? "cursor-pointer hover:bg-fourth-300" : "cursor-not-allowed opacity-60"}`}
+                >
+                  <PiImageFill className="size-6" />
+                </label>
+              </div>
 
-                {/* Text input */}
-                <div className="flex w-full min-w-0 flex-col rounded-xl bg-[#1f1118] p-1 transition-colors duration-300 focus-within:bg-[#23161c] hover:bg-[#23161c]">
-                  {/* Typing section image display */}
-                  {Object.keys(imageFiles).length > 0 && (
-                    <div className="scrollable-element flex w-full flex-nowrap items-center gap-5 overflow-x-auto px-3 pb-2 pt-3">
-                      <div>
-                        <input
-                          key={fileInputKey}
-                          type="file"
-                          id="upload"
-                          name="imageUrl"
-                          onChange={handleFileChange}
-                          disabled={Object.keys(imageFiles).length >= 5}
-                          className="hidden"
+              {/* Text input */}
+              <div className="flex w-full min-w-0 flex-col rounded-xl bg-[#1f1118] p-1 transition-colors duration-300 focus-within:bg-[#23161c] hover:bg-[#23161c]">
+                {/* Typing section image display */}
+                {Object.keys(imageFiles).length > 0 && (
+                  <div className="scrollable-element flex w-full flex-nowrap items-center gap-5 overflow-x-auto px-3 pb-2 pt-3">
+                    <div>
+                      <input
+                        key={fileInputKey}
+                        type="file"
+                        id="upload"
+                        name="imageUrl"
+                        onChange={handleFileChange}
+                        disabled={Object.keys(imageFiles).length >= 5}
+                        className="hidden"
+                      />
+                      <label
+                        htmlFor="upload"
+                        className={`flex aspect-square min-w-24 items-center justify-center overflow-hidden rounded-xl bg-second-600 transition-colors duration-300 ${Object.keys(imageFiles).length < 5 ? "cursor-pointer hover:bg-second-500" : "cursor-not-allowed opacity-60"}`}
+                      >
+                        <BiSolidImageAdd
+                          className={`size-12 ${Object.keys(imageFiles).length < 5 ? "text-utility-primary" : "text-fourth-500"}`}
                         />
-                        <label
-                          htmlFor="upload"
-                          className={`flex aspect-square min-w-24 items-center justify-center overflow-hidden rounded-xl bg-second-600 transition-colors duration-300 ${Object.keys(imageFiles).length < 5 ? "cursor-pointer hover:bg-second-500" : "cursor-not-allowed opacity-60"}`}
-                        >
-                          <BiSolidImageAdd
-                            className={`size-12 ${Object.keys(imageFiles).length < 5 ? "text-utility-primary" : "text-fourth-500"}`}
-                          />
-                        </label>
-                      </div>
-
-                      {Object.keys(imageFiles).map((imageFilesKey, index) => {
-                        const image = URL.createObjectURL(
-                          imageFiles[imageFilesKey],
-                        );
-
-                        return (
-                          <div
-                            key={index}
-                            onClick={() => setSelectedImage(image)}
-                            className="relative aspect-square min-w-24 max-w-24 cursor-pointer rounded-xl"
-                          >
-                            <img
-                              src={image}
-                              alt={`Image-${imageFilesKey}`}
-                              className="h-full w-full rounded-xl object-cover transition-opacity duration-300 hover:opacity-85"
-                            />
-
-                            {/* Remove image button */}
-                            <button
-                              type="button"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleRemoveImage(e, imageFilesKey);
-                              }}
-                              className="absolute -right-2 -top-2 flex items-center justify-center rounded-full bg-second-500 p-1 text-white transition-colors duration-300 hover:bg-second-600"
-                            >
-                              <FiX className="size-5" />
-                            </button>
-                          </div>
-                        );
-                      })}
+                      </label>
                     </div>
-                  )}
 
-                  <input
-                    type="text"
-                    value={inputMessage}
-                    onChange={(e) => setInputMessage(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter") sendMessage();
-                    }}
-                    placeholder="Messege here..."
-                    className="h-full w-full rounded-lg bg-transparent p-3 text-utility-primary placeholder:text-fourth-500 focus:outline-none"
-                  />
-                </div>
+                    {Object.keys(imageFiles).map((imageFilesKey, index) => {
+                      const image = URL.createObjectURL(
+                        imageFiles[imageFilesKey],
+                      );
 
-                {/* Send button */}
-                <div className="flex aspect-square h-[54px] items-center justify-center">
-                  <button
-                    type="button"
-                    className={`flex items-center justify-center rounded-full bg-primary-500 p-3 text-utility-primary transition-colors duration-300 hover:bg-primary-600 active:scale-90`}
-                    onClick={sendMessage}
-                  >
-                    <IoSend className="size-6" />
-                  </button>
-                </div>
+                      return (
+                        <div
+                          key={index}
+                          onClick={() => setSelectedImage(image)}
+                          className="relative aspect-square min-w-24 max-w-24 cursor-pointer rounded-xl"
+                        >
+                          <img
+                            src={image}
+                            alt={`Image-${imageFilesKey}`}
+                            className="h-full w-full rounded-xl object-cover transition-opacity duration-300 hover:opacity-85"
+                          />
+
+                          {/* Remove image button */}
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleRemoveImage(e, imageFilesKey);
+                            }}
+                            className="absolute -right-2 -top-2 flex items-center justify-center rounded-full bg-second-500 p-1 text-white transition-colors duration-300 hover:bg-second-600"
+                          >
+                            <FiX className="size-5" />
+                          </button>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+
+                <input
+                  type="text"
+                  value={inputMessage}
+                  onChange={(e) => setInputMessage(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") sendMessage();
+                  }}
+                  placeholder="Messege here..."
+                  className="h-full w-full rounded-lg bg-transparent p-3 text-utility-primary placeholder:text-fourth-500 focus:outline-none"
+                />
+              </div>
+
+              {/* Send button */}
+              <div className="flex aspect-square h-[54px] items-center justify-center">
+                <button
+                  type="button"
+                  className={`flex items-center justify-center rounded-full bg-primary-500 p-3 text-utility-primary transition-colors duration-300 hover:bg-primary-600 active:scale-90`}
+                  onClick={sendMessage}
+                >
+                  <IoSend className="size-6" />
+                </button>
               </div>
             </div>
           </section>
