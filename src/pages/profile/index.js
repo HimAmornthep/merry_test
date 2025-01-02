@@ -245,18 +245,11 @@ export default function ProfilePage() {
           },
         },
       );
-      console.log("PUT Result:", result.data);
+      // console.log("PUT Result:", result.data);
 
-      // ตรวจสอบว่า API ส่ง URL ของรูปภาพใหม่กลับมาหรือไม่
-      // if (result.data.icon_url) {
-      //   setPackageData((prev) => ({
-      //     ...prev,
-      //     icon_url: response.data.icon_url, // ใช้ URL ใหม่จาก API
-      //   }));
-      // }
-
-      alert("Profile updated successfully!");
-      router.push("/profile");
+      if (result.status === 200) {
+        document.getElementById("update-success-modal").showModal();
+      }
     } catch (error) {
       console.error("Error updating profile:", error);
       alert("Failed to update profile.");
@@ -389,6 +382,32 @@ export default function ProfilePage() {
                 </div>
               </div>
             </div>
+
+            {/* Update success modal */}
+            <dialog
+              id="update-success-modal"
+              className="modal fixed flex items-center justify-center"
+            >
+              <div className="modal-content w-[530px] rounded-2xl bg-white p-6">
+                <h3 className="mb-4 text-center text-xl font-semibold text-gray-800">
+                  Success!
+                </h3>
+                <p className="test-base mb-6 text-center font-normal text-gray-600">
+                  Your profile has been successfully updated.
+                </p>
+                <div className="flex justify-center">
+                  <CustomButton
+                    buttonType="primary"
+                    className="w-[125px] px-4 py-2 text-base font-bold"
+                    onClick={() =>
+                      document.getElementById("update-success-modal").close()
+                    }
+                  >
+                    Close
+                  </CustomButton>
+                </div>
+              </div>
+            </dialog>
 
             {/* Basic Information */}
             <div className="basic-information-section flex flex-col gap-6">
