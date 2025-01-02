@@ -1,13 +1,18 @@
+import { useRouter } from "next/router";
+import axios from "axios";
+import React, { useState, useEffect, Fragment } from "react";
+
+
 import { GoHeartFill } from "react-icons/go";
 import {
   HiMiniMapPin,
   HiMiniChatBubbleOvalLeftEllipsis,
 } from "react-icons/hi2";
 import { IoMdEye } from "react-icons/io";
-
 import { NavBar, Footer } from "@/components/NavBar";
-import React, { useState } from "react";
-import { Fragment } from "react";
+import { jwtDecode } from "jwt-decode";
+
+
 
 function MerryCountBox({ count = 0, text = "Merry", twoHearts = false }) {
   return (
@@ -32,17 +37,28 @@ function MerryCountBox({ count = 0, text = "Merry", twoHearts = false }) {
 
       <p className="text-sm font-medium text-fourth-700 md:text-base">{text}</p>
     </div>
-  );
-}
+    );
+  }
 
-function ProfileBox({ profileData }) {
+function ProfileBox({ profileData, updateMerryToggle  }) {
+  const [merryToggle, setMerryToggle] = useState(true);
+
   const ProfileButton = ({ className = "flex" }) => {
+
+    const toggleMerry = () => {  // ฟังก์ชันที่ใช้สลับสถานะของปุ่ม Merry ระหว่างสีเทาและสีแดง
+      const newToggleState = !merryToggle;
+      setMerryToggle(newToggleState); 
+      updateMerryToggle(profileData.user_other, newToggleState); 
+      // ส่งข้อมูล user_other และสถานะของปุ่ม Merry ไปยังฟังก์ชัน updateMerryToggle ที่อยู่ใน ProfileBox
+    };
+
+
     return (
       <div
         className={`flex min-w-[165px] flex-col items-end justify-center gap-5 md:justify-start ${className}`}
       >
         {/* Merry match/Not match */}
-        {profileData.merry_match === true ? (
+        {profileData.is_match === true ? ( // ถ้า is_match เป็น true ให้แสดงปุ่ม Merry match
           <div className="flex items-center gap-1 rounded-full border-2 border-primary-500 px-4 py-[0.1rem] text-primary-500">
             {/* Two hearts icon */}
             <div className="relative w-[21.5px] text-primary-400">
@@ -62,7 +78,7 @@ function ProfileBox({ profileData }) {
 
         <div className="flex gap-4">
           {/* Chat button */}
-          {profileData.merry_match === true && (
+          {profileData.is_match === true && (
             <button
               className={`flex size-11 items-center justify-center rounded-2xl bg-utility-primary text-fourth-700 transition-all duration-300 [box-shadow:3px_3px_12.5px_rgba(0,0,0,0.1)] hover:scale-105 md:size-12`}
               onClick={() => {}}
@@ -81,11 +97,15 @@ function ProfileBox({ profileData }) {
 
           {/* Merry button */}
           <button
-            className={`flex size-11 items-center justify-center rounded-2xl text-fourth-700 transition-all duration-300 [box-shadow:3px_3px_12.5px_rgba(0,0,0,0.1)] hover:scale-105 md:size-12 ${merryToggle ? "bg-primary-500 text-utility-primary" : "bg-utility-primary"}`}
-            onClick={() => setMerryToggle(!merryToggle)}
+            className={`flex size-11 items-center justify-center rounded-2xl text-fourth-700 transition-all duration-300 [box-shadow:3px_3px_12.5px_rgba(0,0,0,0.1)] hover:scale-105 md:size-12 ${
+              merryToggle ? "bg-primary-500 text-utility-primary" : "bg-utility-primary"
+            }`} // สลับสีพื้นหลังและสีตัวอักษรของปุ่ม Merry ระหว่างสีเทาและสีแดง
+            onClick={toggleMerry} // เรียกใช้ฟังก์ชัน toggleMerry
           >
             <GoHeartFill className="size-5 md:size-6" />
           </button>
+
+          
         </div>
       </div>
     );
@@ -97,14 +117,14 @@ function ProfileBox({ profileData }) {
         {/* Profile name */}
         <div className="flex items-center gap-5">
           <p className="min-w-fit text-2xl font-bold">
-            {profileData.name}{" "}
-            <span className="text-fourth-700">{profileData.age}</span>
+            {profileData.name}
+            <span className="text-fourth-700 pl-2">{profileData.age}</span>
           </p>
 
           <div className="flex items-center gap-2 text-fourth-700">
             <HiMiniMapPin className="aspect-square w-4 min-w-4 text-primary-200" />
             <p>
-              {profileData.location}, {profileData.country}
+              {profileData.location_name}, {profileData.city_name}
             </p>
           </div>
         </div>
@@ -134,11 +154,11 @@ function ProfileBox({ profileData }) {
   const detailData = [
     profileData.sexual_identity,
     profileData.sexual_preference,
-    profileData.racial_preferences,
-    profileData.meeting_interests,
+    profileData.racial_preference,
+    profileData.meeting_interest,
   ];
 
-  const [merryToggle, setMerryToggle] = useState(true);
+
 
   return (
     <div className="flex flex-col gap-6 md:flex-row md:justify-between">
@@ -146,7 +166,7 @@ function ProfileBox({ profileData }) {
         {/* Profile picture */}
         <figure className="relative aspect-square min-w-[7rem] max-w-[10rem] overflow-hidden rounded-3xl md:max-w-[11rem]">
           <img
-            src={profileData?.image_profile[0]}
+            src={profileData?. profile_image}
             alt=""
             className="h-full w-full object-cover"
           />
@@ -175,60 +195,107 @@ function ProfileBox({ profileData }) {
 }
 
 export default function MerryList() {
-  const profileDataRaw = [
-    {
-      id: 1,
-      name: "Daeny",
-      age: 24,
-      location: "Bangkok",
-      country: "Thailand",
-      sexual_identity: "Male",
-      sexual_preference: "Female",
-      racial_preferences: "Indefinite",
-      meeting_interests: "Long-term commitment",
-      image_profile: [
-        "https://res.cloudinary.com/dg2ehb6zy/image/upload/v1733841816/test/pic/yoeapgceodompzxkul96.jpg",
-        "https://res.cloudinary.com/dg2ehb6zy/image/upload/v1733841817/test/pic/h77b5cosenizmriqoopd.jpg",
-      ],
-      merry_today: true,
-      merry_match: true,
-    },
-    {
-      id: 2,
-      name: "Luna",
-      age: 28,
-      location: "New York",
-      country: "United States",
-      sexual_identity: "Female",
-      sexual_preference: "Male",
-      racial_preferences: "American",
-      meeting_interests: "Short-term commitment",
-      image_profile: [
-        "https://res.cloudinary.com/dg2ehb6zy/image/upload/v1733841396/test/pic/xfs5ewcftykcfeef4ad0.jpg",
-        "https://res.cloudinary.com/dg2ehb6zy/image/upload/v1733841817/test/pic/h77b5cosenizmriqoopd.jpg",
-      ],
-      merry_today: false,
-      merry_match: false,
-    },
-    {
-      id: 3,
-      name: "Anna",
-      age: 31,
-      location: "Tokyo",
-      country: "Japan",
-      sexual_identity: "Female",
-      sexual_preference: "Male",
-      racial_preferences: "Asian",
-      meeting_interests: "Making friends",
-      image_profile: [
-        "https://res.cloudinary.com/dg2ehb6zy/image/upload/v1733841398/test/pic/k8jfqfycxqh1gzl3s9fa.jpg",
-        "https://res.cloudinary.com/dg2ehb6zy/image/upload/v1733841817/test/pic/h77b5cosenizmriqoopd.jpg",
-      ],
-      merry_today: false,
-      merry_match: true,
-    },
-  ];
+  const router = useRouter();
+  const [profileDataRaw, setProfileDataRaw] = useState([]);
+  const [profilesToDelete, setProfilesToDelete] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [totalTrue, setTotalTrue] = useState(0);
+  const [totalFalse, setTotalFalse] = useState(0);
 
+  useEffect(() => {
+    const fetchProfiles = async () => {
+      const token = localStorage.getItem("token"); // ดึง token จาก localStorage
+      if (!token) { //  ถ้าไม่มี token ให้แสดงข้อความแจ้งเตือนและเปลี่ยนเส้นทางไปยังหน้า login
+        alert("Please log in to continue."); 
+        router.push("/login"); // ส่งไปยังหน้า login 
+        return; // ออกจากฟังก์ชัน
+      }
+
+      try {
+        const decodedToken = jwtDecode(token);  //    ถอดรหัส token ด้วย jwtDecode
+        const userMasterId = decodedToken.id;   //  ดึง userMasterId จาก decodedToken payload
+
+        console.log("Logged in User ID (from token):", userMasterId);  
+
+        const response = await axios.get(`/api/merry-list`, { // ดึงข้อมูล Matches และจำนวน Matches จาก API
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        setProfileDataRaw(response.data.matches || []); 
+        setTotalTrue(response.data.total_true || 0); 
+        setTotalFalse(response.data.total_false || 0);
+      } catch (error) {
+        console.error("Invalid token or fetch error:", error);
+        alert("Invalid session. Please log in again.");
+        localStorage.removeItem("token");
+        router.push("/login");
+        return;
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    const storedProfiles = JSON.parse( 
+      sessionStorage.getItem("profilesToDelete") || "[]"  // ดึง profilesToDelete จาก sessionStorage ถ้าไม่มีให้ใช้ค่าเริ่มต้นเป็น []
+    );
+    if (storedProfiles.length > 0) {
+      deleteProfiles(storedProfiles); // ถ้ามี profilesToDelete ใน sessionStorage ให้ลบ profiles ที่อยู่ใน profilesToDelete เมื่อรีเฟรชเว็บเพจ
+    }
+
+    fetchProfiles();
+  }, []); // ให้เรียกใช้ฟังก์ชันเมื่อคอมโพเนนต์ถูกโหลดเท่านั้น 
+
+  const deleteProfiles = async (profiles) => {
+    const token = localStorage.getItem("token"); // ดึง token จาก localStorage
+    if (profiles.length === 0 || !token) {
+      console.warn("Empty profiles list or missing token.");
+      return;
+    }
+
+    try {
+      const response = await axios.delete(`/api/merry-list`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        data: { users_to_delete: profiles }, 
+      });
+      console.log("Deleted profiles:", profiles);
+      console.log("Response status:", response.status);
+      console.log("Response data:", response.data);
+      sessionStorage.removeItem("profilesToDelete");
+    } catch (error) {
+      console.error("Error deleting profiles:", error);
+    }
+  };
+
+
+  const updateMerryToggle = (userOther, isActive) => { // ฟังก์ชันที่ใช้สลับสถานะของปุ่ม Merry ระหว่างสีเทาและสีแดง
+    const updatedProfiles = isActive // ถ้าปุ่ม Merry ถูกกด ให้เพิ่ม userOther ลงใน profilesToDelete และบันทึกลง sessionStorage
+      ? profilesToDelete.filter((id) => id !== userOther) //  ถูกกดเป็นสีแดง ให้ลบ userOther ออกจาก profilesToDelete และบันทึกลง sessionStorage
+      : [...profilesToDelete, userOther]; // ถูกกดเป็นสีเทา ให้เพิ่ม userOther ลงใน profilesToDelete และบันทึกลง sessionStorage เพื่อรอการลบ
+
+    setProfilesToDelete(updatedProfiles); 
+    sessionStorage.setItem("profilesToDelete", JSON.stringify(updatedProfiles)); // บันทึก profilesToDelete ลงใน sessionStorage
+  };
+
+  if (loading) { 
+    return (
+      <main className="flex items-center justify-center h-screen bg-utility-bgMain">
+        <span className="loading loading-spinner loading-lg"></span>
+      </main>
+    );
+  }
+
+  // if (profileDataRaw.length === 0) {
+  //   return (
+  //     <main className="flex flex-col items-center justify-center h-screen bg-utility-bgMain">
+  //        <span className="loading loading-spinner loading-lg"></span>
+  //     </main>
+  //   );
+  // }
+  
   return (
     <main className="flex flex-col bg-utility-bgMain">
       <NavBar />
@@ -245,36 +312,33 @@ export default function MerryList() {
             </p>
           </div>
 
-          {/* Merry count section */}
           <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-            <div className="flex gap-4">
-              <MerryCountBox count="16" text="Merry to you" />
-              <MerryCountBox count="3" text="Merry match" twoHearts={true} />
+            <div className="flex gap-4"> 
+              <MerryCountBox count={totalTrue} text="Merry Match" 
+              // จำนวน Merry Match และ Not a Match ที่ได้จาก totalTrue และ totalFalse
+              />  
+              <MerryCountBox count={totalFalse} text="Not a Match" />
             </div>
 
             <div className="flex flex-col items-end">
               <p className="text-sm text-fourth-700 lg:text-base">
                 Merry limit today <span className="text-primary-400">2/20</span>
               </p>
-              <p className="text-xs text-fourth-600 lg:text-sm">
-                Reset in 12h...
-              </p>
+              <p className="text-xs text-fourth-600 lg:text-sm">Reset in 12h...</p>
             </div>
           </div>
         </header>
 
-        {/* Match profile section */}
         <div className="flex flex-col gap-10">
-          {profileDataRaw.map((profileData, index) => {
-            return (
-              <Fragment key={index}>
-                <ProfileBox profileData={profileData} />
-                {index !== profileDataRaw.length - 1 && (
-                  <div className="h-[1px] w-full bg-fourth-300"></div>
-                )}
-              </Fragment>
-            );
-          })}
+          {profileDataRaw.map((profileData) => (
+            <Fragment key={profileData.user_other}>
+              <ProfileBox  // ส่งข้อมูล profileData และฟังก์ชัน updateMerryToggle ไปยัง ProfileBox
+                profileData={profileData} 
+                updateMerryToggle={updateMerryToggle}   
+              />
+              <div className="h-[1px] w-full bg-fourth-300"></div>
+            </Fragment>
+          ))}
         </div>
       </section>
 
