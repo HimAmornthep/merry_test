@@ -38,7 +38,9 @@ export default function Chat() {
   useEffect(() => {
     if (!userId) return;
 
-    const socketIo = io({ path: "/api/chat/socket" });
+    const socketIo = io(process.env.NEXT_PUBLIC_SOCKET_SERVER_URL, {
+      path: "/socket.io",
+    });
 
     socketIo.on("connect", () => {
       console.log("Connected to WebSocket:", socketIo.id);
