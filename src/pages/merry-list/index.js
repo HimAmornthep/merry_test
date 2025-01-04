@@ -94,6 +94,7 @@ function ProfileBox({ profileData, updateMerryToggle  }) {
           >
             <IoMdEye className="size-5 md:size-6" />
           </button>
+          
 
           {/* Merry button */}
           <button
@@ -171,11 +172,12 @@ function ProfileBox({ profileData, updateMerryToggle  }) {
             className="h-full w-full object-cover"
           />
 
-          {profileData.merry_today === true && (
-            <div className="absolute bottom-0 left-0 flex h-[1.5rem] w-[5.5rem] justify-end rounded-tr-xl bg-second-100 pr-2 pt-1 text-xs text-second-600">
-              Merry today
-            </div>
-          )}
+{profileData.date_match && new Date(profileData.date_match).toDateString() === new Date().toDateString() && (
+    <div className="absolute bottom-0 left-0 flex h-[1.5rem] w-[5.5rem] justify-end rounded-tr-xl bg-second-100 pr-2 pt-1 text-xs text-second-600">
+      Merry today
+    </div>
+  )}
+  <div className="h-[1px] w-full bg-fourth-300"></div>
         </figure>
 
         {/* Profile desktop */}
@@ -201,6 +203,10 @@ export default function MerryList() {
   const [loading, setLoading] = useState(true);
   const [totalTrue, setTotalTrue] = useState(0);
   const [totalFalse, setTotalFalse] = useState(0);
+  const [merryRemainLimit, setMerryRemainLimit] = useState(null);
+  const [merryTotaLimit, setMerryTotalLimit] = useState(null);
+  const [merryTime, setMerryTime] = useState(null);
+  const [merryCurrentTime, setMerryCurrentTime] = useState(null);
 
   useEffect(() => {
     const fetchProfiles = async () => {
@@ -223,14 +229,20 @@ export default function MerryList() {
           },
         });
 
-        setProfileDataRaw(response.data.matches || []); 
-        setTotalTrue(response.data.total_true || 0); 
+        setProfileDataRaw(response.data.matches || []);
+        setTotalTrue(response.data.total_true || 0);
         setTotalFalse(response.data.total_false || 0);
+        setMerryRemainLimit(response.data.limit_info.matches_remaining || 0);
+        setMerryTime(response.data.limit_info.hours_reset_time || 0);
+        setMerryTotalLimit(response.data.limit_info.total_limit || 0);
+        setMerryCurrentTime(response.data.limit_info.reset_time || 0);
+        
+
       } catch (error) {
         console.error("Invalid token or fetch error:", error);
         alert("Invalid session. Please log in again.");
         localStorage.removeItem("token");
-        router.push("/login");
+        router.push("/login")
         return;
       } finally {
         setLoading(false);
@@ -246,6 +258,9 @@ export default function MerryList() {
 
     fetchProfiles();
   }, []); // ให้เรียกใช้ฟังก์ชันเมื่อคอมโพเนนต์ถูกโหลดเท่านั้น 
+
+
+
 
   const deleteProfiles = async (profiles) => {
     const token = localStorage.getItem("token"); // ดึง token จาก localStorage
@@ -287,14 +302,6 @@ export default function MerryList() {
       </main>
     );
   }
-
-  // if (profileDataRaw.length === 0) {
-  //   return (
-  //     <main className="flex flex-col items-center justify-center h-screen bg-utility-bgMain">
-  //        <span className="loading loading-spinner loading-lg"></span>
-  //     </main>
-  //   );
-  // }
   
   return (
     <main className="flex flex-col bg-utility-bgMain">
@@ -322,9 +329,9 @@ export default function MerryList() {
 
             <div className="flex flex-col items-end">
               <p className="text-sm text-fourth-700 lg:text-base">
-                Merry limit today <span className="text-primary-400">2/20</span>
+                Merry limit today <span className="text-primary-400">{merryRemainLimit}/{merryTotaLimit} </span>
               </p>
-              <p className="text-xs text-fourth-600 lg:text-sm">Reset in 12h...</p>
+              <p className="text-xs text-fourth-600 lg:text-sm">Reset in {merryTime}h...</p>
             </div>
           </div>
         </header>
@@ -334,7 +341,8 @@ export default function MerryList() {
             <Fragment key={profileData.user_other}>
               <ProfileBox  // ส่งข้อมูล profileData และฟังก์ชัน updateMerryToggle ไปยัง ProfileBox
                 profileData={profileData} 
-                updateMerryToggle={updateMerryToggle}   
+                updateMerryToggle={updateMerryToggle}
+                merryCurrentTime={merryCurrentTime}   
               />
               <div className="h-[1px] w-full bg-fourth-300"></div>
             </Fragment>
