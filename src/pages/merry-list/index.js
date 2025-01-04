@@ -11,6 +11,7 @@ import {
 import { IoMdEye } from "react-icons/io";
 import { NavBar, Footer } from "@/components/NavBar";
 import { jwtDecode } from "jwt-decode";
+import { PreviewProfile } from "@/components/profile/PreviewProfile";
 
 
 
