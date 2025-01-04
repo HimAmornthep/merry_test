@@ -15,39 +15,39 @@ export default async function handler(req, res) {
       try {
         // Query Fetch Matches
         const matchQuery = `
-SELECT 
-    Matching.user_other AS user_other,
-    User_Profiles.name AS name,
-    User_Profiles.age AS age,
-    Gender.gender_name AS sexual_identity,
-    SexualPreference.gender_name AS sexual_preference,
-    Meeting_Interest.meeting_name AS meeting_interest,
-    Racial_Identity.racial_name AS racial_preference,
-    City.city_name AS city_name,
-    Location.location_name AS location_name,
-    Image_Profiles.image_profile_url AS profile_image,
-    Matching.is_match AS is_match,
-    Matching.date_match AS date_match
-FROM Matching
-JOIN User_Profiles ON Matching.user_other = User_Profiles.profile_id
-JOIN Gender ON User_Profiles.gender_id = Gender.gender_id
-JOIN Gender AS SexualPreference ON User_Profiles.sexual_preference_id = SexualPreference.gender_id
-JOIN Meeting_Interest ON User_Profiles.meeting_interest_id = Meeting_Interest.meeting_interest_id
-JOIN Racial_Identity ON User_Profiles.racial_preference_id = Racial_Identity.racial_id
-JOIN City ON User_Profiles.city_id = City.city_id
-JOIN Location ON City.location_id = Location.location_id
-LEFT JOIN Image_Profiles ON User_Profiles.profile_id = Image_Profiles.profile_id
-    AND Image_Profiles.is_primary = true
-WHERE Matching.user_master = $1
-ORDER BY 
-    CASE 
-        WHEN Matching.date_match::date = CURRENT_DATE THEN 1 -- แมทวันนี้ แสดงบนสุด
-        ELSE 2
-    END,
-    Matching.date_match DESC, -- แมทล่าสุดขึ้นบนเสมอ
-    Matching.is_match DESC, -- ตามด้วยแมทที่สำเร็จ
-    User_Profiles.name ASC; -- ชื่อเรียงลำดับตัวอักษร
-
+          SELECT 
+              Matching.user_other AS user_other,
+              User_Profiles.name AS name,
+              User_Profiles.age AS age,
+              User_Profiles.about_me AS about_me, -- เพิ่ม about_me
+              Gender.gender_name AS sexual_identity,
+              SexualPreference.gender_name AS sexual_preference,
+              Meeting_Interest.meeting_name AS meeting_interest,
+              Racial_Identity.racial_name AS racial_preference,
+              City.city_name AS city_name,
+              Location.location_name AS location_name,
+              Image_Profiles.image_profile_url AS profile_image,
+              Matching.is_match AS is_match,
+              Matching.date_match AS date_match
+          FROM Matching
+          JOIN User_Profiles ON Matching.user_other = User_Profiles.profile_id
+          JOIN Gender ON User_Profiles.gender_id = Gender.gender_id
+          JOIN Gender AS SexualPreference ON User_Profiles.sexual_preference_id = SexualPreference.gender_id
+          JOIN Meeting_Interest ON User_Profiles.meeting_interest_id = Meeting_Interest.meeting_interest_id
+          JOIN Racial_Identity ON User_Profiles.racial_preference_id = Racial_Identity.racial_id
+          JOIN City ON User_Profiles.city_id = City.city_id
+          JOIN Location ON City.location_id = Location.location_id
+          LEFT JOIN Image_Profiles ON User_Profiles.profile_id = Image_Profiles.profile_id
+              AND Image_Profiles.is_primary = true
+          WHERE Matching.user_master = $1
+          ORDER BY 
+              CASE 
+                  WHEN Matching.date_match::date = CURRENT_DATE THEN 1 -- แมทวันนี้ แสดงบนสุด
+                  ELSE 2
+              END,
+              Matching.date_match DESC, -- แมทล่าสุดขึ้นบนเสมอ
+              Matching.is_match DESC, -- ตามด้วยแมทที่สำเร็จ
+              User_Profiles.name ASC; -- ชื่อเรียงลำดับตัวอักษร
         `;
 
         const countQuery = `
@@ -58,7 +58,6 @@ ORDER BY
           WHERE user_master = $1;
         `;
 
-        // Query Limit Info
         const limitQuery = `
           SELECT 
             user_id, 
@@ -72,58 +71,57 @@ ORDER BY
             user_id = $1;
         `;
 
-        const detailProfileQuery = `
-        SELECT 
-    User_Profiles.user_id AS user_id,
-    User_Profiles.name AS name,
-    User_Profiles.age AS age,
-    Gender.gender_name AS sexual_identity,
-    SexualPreference.gender_name AS sexual_preference,
-    Meeting_Interest.meeting_name AS meeting_interest,
-    Racial_Identity.racial_name AS racial_preference,
-    City.city_name AS city_name,
-    Location.location_name AS location_name,
-    (
-        SELECT ARRAY_AGG(hobbies.hobby_name ORDER BY hobbies.hobby_name)
-        FROM hobbies_profiles
-        JOIN hobbies ON hobbies_profiles.hobbies_id = hobbies.hobbies_id
-        WHERE hobbies_profiles.profile_id = User_Profiles.profile_id
-    ) AS hobbies,
-    (
-        SELECT JSON_AGG(
-            JSON_BUILD_OBJECT(
-                'image_profile_id', ip.image_profile_id,
-                'image_url', ip.image_profile_url,
-                'is_primary', ip.is_primary
-            )
-        )
-        FROM Image_Profiles AS ip
-        WHERE ip.profile_id = User_Profiles.profile_id
-    ) AS profile_images
-FROM Matching
-JOIN User_Profiles ON Matching.user_other = User_Profiles.profile_id
-JOIN Gender ON User_Profiles.gender_id = Gender.gender_id
-JOIN Gender AS SexualPreference ON User_Profiles.sexual_preference_id = SexualPreference.gender_id
-JOIN Meeting_Interest ON User_Profiles.meeting_interest_id = Meeting_Interest.meeting_interest_id
-JOIN Racial_Identity ON User_Profiles.racial_preference_id = Racial_Identity.racial_id
-JOIN City ON User_Profiles.city_id = City.city_id
-JOIN Location ON City.location_id = Location.location_id
-WHERE Matching.user_master = $1
-ORDER BY 
-    CASE 
-        WHEN Matching.date_match::date = CURRENT_DATE THEN 1 -- แมทวันนี้ แสดงบนสุด
-        ELSE 2
-    END,
-    Matching.date_match DESC, -- แมทล่าสุดขึ้นบนเสมอ
-    User_Profiles.name ASC; -- ชื่อเรียงลำดับตัวอักษร
-
+        const detailHobbiesQuery = `
+          SELECT 
+              Matching.user_other AS user_other,
+              (
+                  SELECT ARRAY_AGG(h.hobby_name ORDER BY h.hobby_name)
+                  FROM hobbies_profiles hp
+                  JOIN hobbies h ON hp.hobbies_id = h.hobbies_id
+                  WHERE hp.profile_id = User_Profiles.profile_id
+              ) AS hobbies
+          FROM Matching
+          JOIN User_Profiles ON Matching.user_other = User_Profiles.profile_id
+          WHERE Matching.user_master = $1
+          ORDER BY 
+              CASE 
+                  WHEN Matching.date_match::date = CURRENT_DATE THEN 1
+                  ELSE 2
+              END,
+              Matching.date_match DESC,
+              Matching.is_match DESC;
+        `;
+        
+        const imageQuery = `
+          SELECT 
+              Matching.user_other AS user_other,
+              (
+                  SELECT JSON_AGG(
+                      JSON_BUILD_OBJECT(
+                          'image_url', ip.image_profile_url
+                      )
+                  )
+                  FROM Image_Profiles AS ip
+                  WHERE ip.profile_id = User_Profiles.profile_id
+              ) AS images
+          FROM Matching
+          JOIN User_Profiles ON Matching.user_other = User_Profiles.profile_id
+          WHERE Matching.user_master = $1
+          ORDER BY 
+              CASE 
+                  WHEN Matching.date_match::date = CURRENT_DATE THEN 1
+                  ELSE 2
+              END,
+              Matching.date_match DESC,
+              Matching.is_match DESC;
         `;
 
-        const [matchesResult, countResult, limitResult, detailProfileResult] = await Promise.all([
+        const [matchesResult, countResult, limitResult, hobbiesResult, imageResult] = await Promise.all([
           connectionPool.query(matchQuery, [userMasterId]),
           connectionPool.query(countQuery, [userMasterId]),
           connectionPool.query(limitQuery, [userMasterId]),
-          connectionPool.query(detailProfileQuery, [userMasterId]),
+          connectionPool.query(detailHobbiesQuery, [userMasterId]),
+          connectionPool.query(imageQuery, [userMasterId])
         ]);
 
         if (limitResult.rows.length === 0) {
@@ -135,8 +133,10 @@ ORDER BY
           total_true: countResult.rows[0]?.total_true || 0,
           total_false: countResult.rows[0]?.total_false || 0,
           limit_info: limitResult.rows[0],
-          detail_profile: detailProfileResult.rows[0],
+          hobbies: hobbiesResult.rows || [],
+          images: imageResult.rows || []
         });
+
       } catch (error) {
         console.error("Error fetching match list or limit info:", error);
         res.status(500).json({ error: "Internal server error" });

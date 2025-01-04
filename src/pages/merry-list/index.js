@@ -12,6 +12,8 @@ import { IoMdEye } from "react-icons/io";
 import { NavBar, Footer } from "@/components/NavBar";
 import { jwtDecode } from "jwt-decode";
 import { PreviewProfile } from "@/components/profile/PreviewProfile";
+import { doc } from "prettier";
+import { set } from "mongoose";
 
 
 
@@ -41,7 +43,7 @@ function MerryCountBox({ count = 0, text = "Merry", twoHearts = false }) {
     );
   }
 
-function ProfileBox({ profileData, updateMerryToggle  }) {
+function ProfileBox({ profileData, updateMerryToggle,merryHobbies,merryImages }) {
   const [merryToggle, setMerryToggle] = useState(true);
 
   const ProfileButton = ({ className = "flex" }) => {
@@ -91,11 +93,42 @@ function ProfileBox({ profileData, updateMerryToggle  }) {
           {/* View profile button */}
           <button
             className={`flex size-11 items-center justify-center rounded-2xl bg-utility-primary text-fourth-700 transition-all duration-300 [box-shadow:3px_3px_12.5px_rgba(0,0,0,0.1)] hover:scale-105 md:size-12`}
-            onClick={() => {}}
+            onClick={() => {document.getElementById("preview-profile-desktop").showModal();}}
           >
             <IoMdEye className="size-5 md:size-6" />
           </button>
           
+          <dialog
+  id="preview-profile-desktop"
+  className="modal fixed inset-0 flex items-center justify-center z-50 overflow-hidden"
+>
+  <div className="modal-box relative bg-white max-w-[90%] lg:max-w-[1140px] lg:rounded-[32px] p-6">
+    {/* ปุ่มปิด Modal */}
+    <form method="dialog" className="absolute top-4 right-4">
+      <button className="btn btn-sm btn-circle btn-ghost h-10 w-10">✕</button>
+    </form>
+
+    {/* PreviewProfile */}
+    <PreviewProfile
+      name={profileData.name}
+      age={profileData.age}
+      city={profileData.city_name}
+      location={profileData.location_name}
+      sexIdentity={profileData.sexual_identity}
+      sexPref={profileData.sexual_preference}
+      racialPref={profileData.racial_preference}
+      meetingInterest={profileData.meeting_interest}
+      aboutMe={profileData.about_me}
+      hobby={merryHobbies}
+      image={merryImages}
+    />
+  </div>
+</dialog>
+
+
+
+
+
 
           {/* Merry button */}
           <button
@@ -208,6 +241,9 @@ export default function MerryList() {
   const [merryTotaLimit, setMerryTotalLimit] = useState(null);
   const [merryTime, setMerryTime] = useState(null);
   const [merryCurrentTime, setMerryCurrentTime] = useState(null);
+  const [merryHobbies, setMerryHobbies] = useState([]);
+  const [merryImages, setMerryImages] = useState([]);
+  
 
   useEffect(() => {
     const fetchProfiles = async () => {
@@ -237,6 +273,8 @@ export default function MerryList() {
         setMerryTime(response.data.limit_info.hours_reset_time || 0);
         setMerryTotalLimit(response.data.limit_info.total_limit || 0);
         setMerryCurrentTime(response.data.limit_info.reset_time || 0);
+        setMerryHobbies(response.data.hobbies || []);
+        setMerryImages(response.data.images || []);
         
 
       } catch (error) {
@@ -259,9 +297,6 @@ export default function MerryList() {
 
     fetchProfiles();
   }, []); // ให้เรียกใช้ฟังก์ชันเมื่อคอมโพเนนต์ถูกโหลดเท่านั้น 
-
-
-
 
   const deleteProfiles = async (profiles) => {
     const token = localStorage.getItem("token"); // ดึง token จาก localStorage
@@ -303,6 +338,13 @@ export default function MerryList() {
       </main>
     );
   }
+
+
+  const combinedProfiles = profileDataRaw.map((profile) => {
+    const hobbies = merryHobbies.find((item) => item.user_other === profile.user_other)?.hobbies || [];
+    const images = merryImages.find((item) => item.user_other === profile.user_other)?.images || [];
+    return { ...profile, hobbies, images };
+  });
   
   return (
     <main className="flex flex-col bg-utility-bgMain">
@@ -343,7 +385,9 @@ export default function MerryList() {
               <ProfileBox  // ส่งข้อมูล profileData และฟังก์ชัน updateMerryToggle ไปยัง ProfileBox
                 profileData={profileData} 
                 updateMerryToggle={updateMerryToggle}
-                merryCurrentTime={merryCurrentTime}   
+                merryCurrentTime={merryCurrentTime} 
+                merryHobbies={merryHobbies}
+                merryImages={merryImages}
               />
               <div className="h-[1px] w-full bg-fourth-300"></div>
             </Fragment>
