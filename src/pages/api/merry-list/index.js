@@ -15,43 +15,60 @@ export default async function handler(req, res) {
       try {
         // Query Fetch Matches
         const matchQuery = `
-  SELECT 
-      Matching.user_other AS user_other,
-      User_Profiles.name AS name,
-      User_Profiles.age AS age,
-      User_Profiles.about_me AS about_me, -- เพิ่ม about_me
-      Gender.gender_name AS sexual_identity,
-      SexualPreference.gender_name AS sexual_preference,
-      Meeting_Interest.meeting_name AS meeting_interest,
-      Racial_Identity.racial_name AS racial_preference,
-      City.city_name AS city_name,
-      Location.location_name AS location_name,
-      Image_Profiles.image_profile_url AS profile_image,
-      Matching.is_match AS is_match,
-      Matching.date_match AS date_match
-  FROM Matching
-  JOIN User_Profiles ON Matching.user_other = User_Profiles.profile_id
-  JOIN Gender ON User_Profiles.gender_id = Gender.gender_id
-  JOIN Gender AS SexualPreference ON User_Profiles.sexual_preference_id = SexualPreference.gender_id
-  JOIN Meeting_Interest ON User_Profiles.meeting_interest_id = Meeting_Interest.meeting_interest_id
-  JOIN Racial_Identity ON User_Profiles.racial_preference_id = Racial_Identity.racial_id
-  JOIN City ON User_Profiles.city_id = City.city_id
-  JOIN Location ON City.location_id = Location.location_id
-  LEFT JOIN Image_Profiles ON User_Profiles.profile_id = Image_Profiles.profile_id
-      AND Image_Profiles.is_primary = true
-  WHERE Matching.user_master = $1
-  ORDER BY 
-      CASE 
-          WHEN Matching.is_match = true THEN 1 -- แมทสำเร็จ แสดงบนสุด
-          ELSE 2
-      END,
-      CASE 
-          WHEN Matching.date_match::date = CURRENT_DATE THEN 1 -- แมทวันนี้ แสดงตามมา
-          ELSE 2
-      END,
-      Matching.date_match DESC, -- แมทล่าสุดขึ้นบนเสมอ
-      User_Profiles.name ASC; -- ชื่อเรียงลำดับตัวอักษร
+SELECT 
+    Matching.user_other AS user_other,
+    User_Profiles.name AS name,
+    User_Profiles.age AS age,
+    User_Profiles.about_me AS about_me,
+    Gender.gender_name AS sexual_identity,
+    SexualPreference.gender_name AS sexual_preference,
+    Meeting_Interest.meeting_name AS meeting_interest,
+    Racial_Identity.racial_name AS racial_preference,
+    City.city_name AS city_name,
+    Location.location_name AS location_name,
+    JSON_AGG(
+        JSON_BUILD_OBJECT(
+            'image_url', Image_Profiles.image_profile_url,
+            'is_primary', Image_Profiles.is_primary
+        )
+        ORDER BY Image_Profiles.is_primary DESC -- เรียงภาพโดย is_primary ก่อน
+    ) AS images,
+    (
+        SELECT ARRAY_AGG(h.hobby_name ORDER BY ARRAY_POSITION(User_Profiles.hobbies_id, h.hobbies_id))
+        FROM hobbies h
+        WHERE h.hobbies_id = ANY(User_Profiles.hobbies_id)
+    ) AS hobbies, -- รวมเฉพาะ hobby_name ที่เรียงตามลำดับใน User_Profiles.hobbies_id
+    Matching.is_match AS is_match,
+    Matching.date_match AS date_match
+FROM Matching
+JOIN User_Profiles ON Matching.user_other = User_Profiles.profile_id
+JOIN Gender ON User_Profiles.gender_id = Gender.gender_id
+JOIN Gender AS SexualPreference ON User_Profiles.sexual_preference_id = SexualPreference.gender_id
+JOIN Meeting_Interest ON User_Profiles.meeting_interest_id = Meeting_Interest.meeting_interest_id
+JOIN Racial_Identity ON User_Profiles.racial_preference_id = Racial_Identity.racial_id
+JOIN City ON User_Profiles.city_id = City.city_id
+JOIN Location ON City.location_id = Location.location_id
+LEFT JOIN Image_Profiles ON User_Profiles.profile_id = Image_Profiles.profile_id
+WHERE Matching.user_master = $1
+GROUP BY 
+    Matching.user_other, User_Profiles.profile_id, Gender.gender_name, 
+    SexualPreference.gender_name, Meeting_Interest.meeting_name, 
+    Racial_Identity.racial_name, City.city_name, Location.location_name,
+    Matching.is_match, Matching.date_match
+ORDER BY 
+    CASE 
+        WHEN Matching.is_match = true THEN 1
+        ELSE 2
+    END,
+    CASE 
+        WHEN Matching.date_match::date = CURRENT_DATE THEN 1
+        ELSE 2
+    END,
+    Matching.date_match DESC,
+    User_Profiles.name ASC;
+
 `;
+
 
         const countQuery = `
           SELECT 
@@ -105,7 +122,7 @@ SELECT
     Matching.user_other AS user_other,
     (
         SELECT JSON_AGG(
-            JSON_BUILD_OBJECT('image_url', ip.image_profile_url)
+            ip.image_profile_url
         )
         FROM (
             SELECT DISTINCT 
@@ -129,6 +146,7 @@ ORDER BY
     END,
     Matching.date_match DESC, -- แมทล่าสุดขึ้นบนเสมอ
     User_Profiles.name ASC; -- ชื่อเรียงลำดับตัวอักษร
+
 `;
       
 

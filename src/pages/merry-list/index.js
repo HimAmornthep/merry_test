@@ -43,8 +43,6 @@ function MerryCountBox({ count = 0, text = "Merry", twoHearts = false }) {
 function ProfileBox({
   profileData,
   updateMerryToggle,
-  merryHobbies,
-  merryImages,
   onPreviewClick,
   selectedProfile,
 }) {
@@ -119,8 +117,8 @@ function ProfileBox({
                   racialPref={selectedProfile.racial_preference}
                   meetingInterest={selectedProfile.meeting_interest}
                   aboutMe={selectedProfile.about_me}
-                  hobby={merryHobbies}
-                  image={merryImages}
+                  hobby={selectedProfile.hobbies}
+                  image={selectedProfile.images}
                 />
               )}
             </div>
@@ -195,7 +193,7 @@ function ProfileBox({
         {/* Profile picture */}
         <figure className="relative aspect-square min-w-[7rem] max-w-[10rem] overflow-hidden rounded-3xl md:max-w-[11rem]">
           <img
-            src={profileData?.profile_image}
+            src={profileData?.images[0]?.image_url || "/images/blank-profile.png"}
             alt=""
             className="h-full w-full object-cover"
           />
@@ -237,8 +235,6 @@ export default function MerryList() {
   const [merryTotaLimit, setMerryTotalLimit] = useState(null);
   const [merryTime, setMerryTime] = useState(null);
   const [merryCurrentTime, setMerryCurrentTime] = useState(null);
-  const [merryHobbies, setMerryHobbies] = useState([]);
-  const [merryImages, setMerryImages] = useState([]);
   const [selectedProfile, setSelectedProfile] = useState(null);
 
   const handlePreviewClick = (profileData) => {
@@ -276,8 +272,6 @@ export default function MerryList() {
         setMerryTime(response.data.limit_info.hours_reset_time || 0);
         setMerryTotalLimit(response.data.limit_info.total_limit || 0);
         setMerryCurrentTime(response.data.limit_info.reset_time || 0);
-        setMerryHobbies(response.data.hobbies || []);
-        setMerryImages(response.data.images || []);
         setSelectedProfile(response.data.matches[0] || null);
       } catch (error) {
         console.error("Invalid token or fetch error:", error);
@@ -375,7 +369,7 @@ export default function MerryList() {
                 </span>
               </p>
               <p className="text-xs text-fourth-600 lg:text-sm">
-                Reset in {merryTime} h...
+                Reset in {merryTime}h...
               </p>
             </div>
           </div>
@@ -388,16 +382,6 @@ export default function MerryList() {
                 profileData={profileData}
                 updateMerryToggle={updateMerryToggle}
                 merryCurrentTime={merryCurrentTime}
-                merryImages={
-                  merryImages.find(
-                    (item) => item.user_other === profileData.user_other,
-                  )?.images || []
-                }
-                merryHobbies={
-                  merryHobbies.find(
-                    (item) => item.user_other === profileData.user_other,
-                  )?.hobbies || []
-                }
                 onPreviewClick={handlePreviewClick} // ส่งฟังก์ชัน onPreviewClick
                 selectedProfile={selectedProfile}
               />
