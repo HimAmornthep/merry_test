@@ -2,7 +2,6 @@ import { useRouter } from "next/router";
 import axios from "axios";
 import React, { useState, useEffect, Fragment } from "react";
 
-
 import { GoHeartFill } from "react-icons/go";
 import {
   HiMiniMapPin,
@@ -14,8 +13,6 @@ import { jwtDecode } from "jwt-decode";
 import { PreviewProfile } from "@/components/profile/PreviewProfile";
 import { doc } from "prettier";
 import { set } from "mongoose";
-
-
 
 function MerryCountBox({ count = 0, text = "Merry", twoHearts = false }) {
   return (
@@ -40,21 +37,27 @@ function MerryCountBox({ count = 0, text = "Merry", twoHearts = false }) {
 
       <p className="text-sm font-medium text-fourth-700 md:text-base">{text}</p>
     </div>
-    );
-  }
+  );
+}
 
-function ProfileBox({ profileData, updateMerryToggle,merryHobbies,merryImages }) {
+function ProfileBox({
+  profileData,
+  updateMerryToggle,
+  merryHobbies,
+  merryImages,
+  onPreviewClick,
+  selectedProfile,
+}) {
   const [merryToggle, setMerryToggle] = useState(true);
 
   const ProfileButton = ({ className = "flex" }) => {
-
-    const toggleMerry = () => {  // ฟังก์ชันที่ใช้สลับสถานะของปุ่ม Merry ระหว่างสีเทาและสีแดง
+    const toggleMerry = () => {
+      // ฟังก์ชันที่ใช้สลับสถานะของปุ่ม Merry ระหว่างสีเทาและสีแดง
       const newToggleState = !merryToggle;
-      setMerryToggle(newToggleState); 
-      updateMerryToggle(profileData.user_other, newToggleState); 
+      setMerryToggle(newToggleState);
+      updateMerryToggle(profileData.user_other, newToggleState);
       // ส่งข้อมูล user_other และสถานะของปุ่ม Merry ไปยังฟังก์ชัน updateMerryToggle ที่อยู่ใน ProfileBox
     };
-
 
     return (
       <div
@@ -93,54 +96,47 @@ function ProfileBox({ profileData, updateMerryToggle,merryHobbies,merryImages })
           {/* View profile button */}
           <button
             className={`flex size-11 items-center justify-center rounded-2xl bg-utility-primary text-fourth-700 transition-all duration-300 [box-shadow:3px_3px_12.5px_rgba(0,0,0,0.1)] hover:scale-105 md:size-12`}
-            onClick={() => {document.getElementById("preview-profile-desktop").showModal();}}
+            onClick={() => onPreviewClick(profileData)}
           >
             <IoMdEye className="size-5 md:size-6" />
           </button>
-          
-          <dialog
-  id="preview-profile-desktop"
-  className="modal fixed inset-0 flex items-center justify-center z-50 overflow-hidden"
->
-  <div className="modal-box relative bg-white max-w-[90%] lg:max-w-[1140px] lg:rounded-[32px] p-6">
-    {/* ปุ่มปิด Modal */}
-    <form method="dialog" className="absolute top-4 right-4">
-      <button className="btn btn-sm btn-circle btn-ghost h-10 w-10">✕</button>
-    </form>
 
-    {/* PreviewProfile */}
-    <PreviewProfile
-      name={profileData.name}
-      age={profileData.age}
-      city={profileData.city_name}
-      location={profileData.location_name}
-      sexIdentity={profileData.sexual_identity}
-      sexPref={profileData.sexual_preference}
-      racialPref={profileData.racial_preference}
-      meetingInterest={profileData.meeting_interest}
-      aboutMe={profileData.about_me}
-      hobby={merryHobbies}
-      image={merryImages}
-    />
-  </div>
-</dialog>
-
-
-
-
-
+          <dialog id="preview-profile-desktop" className="modal">
+            <div className="modal-box relative bg-white p-6">
+              <form method="dialog">
+                <button className="btn btn-circle btn-ghost btn-sm h-10 w-10">
+                  ✕
+                </button>
+              </form>
+              {selectedProfile && (
+                <PreviewProfile
+                  name={selectedProfile.name}
+                  age={selectedProfile.age}
+                  city={selectedProfile.city_name}
+                  location={selectedProfile.location_name}
+                  sexIdentity={selectedProfile.sexual_identity}
+                  sexPref={selectedProfile.sexual_preference}
+                  racialPref={selectedProfile.racial_preference}
+                  meetingInterest={selectedProfile.meeting_interest}
+                  aboutMe={selectedProfile.about_me}
+                  hobby={merryHobbies}
+                  image={merryImages}
+                />
+              )}
+            </div>
+          </dialog>
 
           {/* Merry button */}
           <button
             className={`flex size-11 items-center justify-center rounded-2xl text-fourth-700 transition-all duration-300 [box-shadow:3px_3px_12.5px_rgba(0,0,0,0.1)] hover:scale-105 md:size-12 ${
-              merryToggle ? "bg-primary-500 text-utility-primary" : "bg-utility-primary"
+              merryToggle
+                ? "bg-primary-500 text-utility-primary"
+                : "bg-utility-primary"
             }`} // สลับสีพื้นหลังและสีตัวอักษรของปุ่ม Merry ระหว่างสีเทาและสีแดง
             onClick={toggleMerry} // เรียกใช้ฟังก์ชัน toggleMerry
           >
             <GoHeartFill className="size-5 md:size-6" />
           </button>
-
-          
         </div>
       </div>
     );
@@ -153,7 +149,7 @@ function ProfileBox({ profileData, updateMerryToggle,merryHobbies,merryImages })
         <div className="flex items-center gap-5">
           <p className="min-w-fit text-2xl font-bold">
             {profileData.name}
-            <span className="text-fourth-700 pl-2">{profileData.age}</span>
+            <span className="pl-2 text-fourth-700">{profileData.age}</span>
           </p>
 
           <div className="flex items-center gap-2 text-fourth-700">
@@ -193,25 +189,25 @@ function ProfileBox({ profileData, updateMerryToggle,merryHobbies,merryImages })
     profileData.meeting_interest,
   ];
 
-
-
   return (
     <div className="flex flex-col gap-6 md:flex-row md:justify-between">
       <div className="flex w-full justify-between gap-5 md:justify-start md:gap-10 lg:gap-12">
         {/* Profile picture */}
         <figure className="relative aspect-square min-w-[7rem] max-w-[10rem] overflow-hidden rounded-3xl md:max-w-[11rem]">
           <img
-            src={profileData?. profile_image}
+            src={profileData?.profile_image}
             alt=""
             className="h-full w-full object-cover"
           />
 
-{profileData.date_match && new Date(profileData.date_match).toDateString() === new Date().toDateString() && (
-    <div className="absolute bottom-0 left-0 flex h-[1.5rem] w-[5.5rem] justify-end rounded-tr-xl bg-second-100 pr-2 pt-1 text-xs text-second-600">
-      Merry today
-    </div>
-  )}
-  <div className="h-[1px] w-full bg-fourth-300"></div>
+          {profileData.date_match &&
+            new Date(profileData.date_match).toDateString() ===
+              new Date().toDateString() && (
+              <div className="absolute bottom-0 left-0 flex h-[1.5rem] w-[5.5rem] justify-end rounded-tr-xl bg-second-100 pr-2 pt-1 text-xs text-second-600">
+                Merry today
+              </div>
+            )}
+          <div className="h-[1px] w-full bg-fourth-300"></div>
         </figure>
 
         {/* Profile desktop */}
@@ -243,24 +239,31 @@ export default function MerryList() {
   const [merryCurrentTime, setMerryCurrentTime] = useState(null);
   const [merryHobbies, setMerryHobbies] = useState([]);
   const [merryImages, setMerryImages] = useState([]);
-  
+  const [selectedProfile, setSelectedProfile] = useState(null);
+
+  const handlePreviewClick = (profileData) => {
+    setSelectedProfile(profileData); // ตั้งค่าโปรไฟล์ที่ถูกเลือก
+    document.getElementById("preview-profile-desktop").showModal(); // เปิด Modal
+  };
 
   useEffect(() => {
     const fetchProfiles = async () => {
       const token = localStorage.getItem("token"); // ดึง token จาก localStorage
-      if (!token) { //  ถ้าไม่มี token ให้แสดงข้อความแจ้งเตือนและเปลี่ยนเส้นทางไปยังหน้า login
-        alert("Please log in to continue."); 
-        router.push("/login"); // ส่งไปยังหน้า login 
+      if (!token) {
+        //  ถ้าไม่มี token ให้แสดงข้อความแจ้งเตือนและเปลี่ยนเส้นทางไปยังหน้า login
+        alert("Please log in to continue.");
+        router.push("/login"); // ส่งไปยังหน้า login
         return; // ออกจากฟังก์ชัน
       }
 
       try {
-        const decodedToken = jwtDecode(token);  //    ถอดรหัส token ด้วย jwtDecode
-        const userMasterId = decodedToken.id;   //  ดึง userMasterId จาก decodedToken payload
+        const decodedToken = jwtDecode(token); //    ถอดรหัส token ด้วย jwtDecode
+        const userMasterId = decodedToken.id; //  ดึง userMasterId จาก decodedToken payload
 
-        console.log("Logged in User ID (from token):", userMasterId);  
+        console.log("Logged in User ID (from token):", userMasterId);
 
-        const response = await axios.get(`/api/merry-list`, { // ดึงข้อมูล Matches และจำนวน Matches จาก API
+        const response = await axios.get(`/api/merry-list`, {
+          // ดึงข้อมูล Matches และจำนวน Matches จาก API
           headers: {
             Authorization: `Bearer ${token}`,
           },
@@ -275,28 +278,27 @@ export default function MerryList() {
         setMerryCurrentTime(response.data.limit_info.reset_time || 0);
         setMerryHobbies(response.data.hobbies || []);
         setMerryImages(response.data.images || []);
-        
-
+        setSelectedProfile(response.data.matches[0] || null);
       } catch (error) {
         console.error("Invalid token or fetch error:", error);
         alert("Invalid session. Please log in again.");
         localStorage.removeItem("token");
-        router.push("/login")
+        router.push("/login");
         return;
       } finally {
         setLoading(false);
       }
     };
 
-    const storedProfiles = JSON.parse( 
-      sessionStorage.getItem("profilesToDelete") || "[]"  // ดึง profilesToDelete จาก sessionStorage ถ้าไม่มีให้ใช้ค่าเริ่มต้นเป็น []
+    const storedProfiles = JSON.parse(
+      sessionStorage.getItem("profilesToDelete") || "[]", // ดึง profilesToDelete จาก sessionStorage ถ้าไม่มีให้ใช้ค่าเริ่มต้นเป็น []
     );
     if (storedProfiles.length > 0) {
       deleteProfiles(storedProfiles); // ถ้ามี profilesToDelete ใน sessionStorage ให้ลบ profiles ที่อยู่ใน profilesToDelete เมื่อรีเฟรชเว็บเพจ
     }
 
     fetchProfiles();
-  }, []); // ให้เรียกใช้ฟังก์ชันเมื่อคอมโพเนนต์ถูกโหลดเท่านั้น 
+  }, []); // ให้เรียกใช้ฟังก์ชันเมื่อคอมโพเนนต์ถูกโหลดเท่านั้น
 
   const deleteProfiles = async (profiles) => {
     const token = localStorage.getItem("token"); // ดึง token จาก localStorage
@@ -310,7 +312,7 @@ export default function MerryList() {
         headers: {
           Authorization: `Bearer ${token}`,
         },
-        data: { users_to_delete: profiles }, 
+        data: { users_to_delete: profiles },
       });
       console.log("Deleted profiles:", profiles);
       console.log("Response status:", response.status);
@@ -321,31 +323,24 @@ export default function MerryList() {
     }
   };
 
-
-  const updateMerryToggle = (userOther, isActive) => { // ฟังก์ชันที่ใช้สลับสถานะของปุ่ม Merry ระหว่างสีเทาและสีแดง
+  const updateMerryToggle = (userOther, isActive) => {
+    // ฟังก์ชันที่ใช้สลับสถานะของปุ่ม Merry ระหว่างสีเทาและสีแดง
     const updatedProfiles = isActive // ถ้าปุ่ม Merry ถูกกด ให้เพิ่ม userOther ลงใน profilesToDelete และบันทึกลง sessionStorage
       ? profilesToDelete.filter((id) => id !== userOther) //  ถูกกดเป็นสีแดง ให้ลบ userOther ออกจาก profilesToDelete และบันทึกลง sessionStorage
       : [...profilesToDelete, userOther]; // ถูกกดเป็นสีเทา ให้เพิ่ม userOther ลงใน profilesToDelete และบันทึกลง sessionStorage เพื่อรอการลบ
 
-    setProfilesToDelete(updatedProfiles); 
+    setProfilesToDelete(updatedProfiles);
     sessionStorage.setItem("profilesToDelete", JSON.stringify(updatedProfiles)); // บันทึก profilesToDelete ลงใน sessionStorage
   };
 
-  if (loading) { 
+  if (loading) {
     return (
-      <main className="flex items-center justify-center h-screen bg-utility-bgMain">
+      <main className="flex h-screen items-center justify-center bg-utility-bgMain">
         <span className="loading loading-spinner loading-lg"></span>
       </main>
     );
   }
 
-
-  const combinedProfiles = profileDataRaw.map((profile) => {
-    const hobbies = merryHobbies.find((item) => item.user_other === profile.user_other)?.hobbies || [];
-    const images = merryImages.find((item) => item.user_other === profile.user_other)?.images || [];
-    return { ...profile, hobbies, images };
-  });
-  
   return (
     <main className="flex flex-col bg-utility-bgMain">
       <NavBar />
@@ -363,18 +358,25 @@ export default function MerryList() {
           </div>
 
           <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-            <div className="flex gap-4"> 
-              <MerryCountBox count={totalTrue} text="Merry Match" 
-              // จำนวน Merry Match และ Not a Match ที่ได้จาก totalTrue และ totalFalse
-              />  
+            <div className="flex gap-4">
+              <MerryCountBox
+                count={totalTrue}
+                text="Merry Match"
+                // จำนวน Merry Match และ Not a Match ที่ได้จาก totalTrue และ totalFalse
+              />
               <MerryCountBox count={totalFalse} text="Not a Match" />
             </div>
 
             <div className="flex flex-col items-end">
               <p className="text-sm text-fourth-700 lg:text-base">
-                Merry limit today <span className="text-primary-400">{merryRemainLimit}/{merryTotaLimit} </span>
+                Merry limit today{" "}
+                <span className="text-primary-400">
+                  {merryRemainLimit}/{merryTotaLimit}{" "}
+                </span>
               </p>
-              <p className="text-xs text-fourth-600 lg:text-sm">Reset in {merryTime}h...</p>
+              <p className="text-xs text-fourth-600 lg:text-sm">
+                Reset in {merryTime} h...
+              </p>
             </div>
           </div>
         </header>
@@ -382,12 +384,22 @@ export default function MerryList() {
         <div className="flex flex-col gap-10">
           {profileDataRaw.map((profileData) => (
             <Fragment key={profileData.user_other}>
-              <ProfileBox  // ส่งข้อมูล profileData และฟังก์ชัน updateMerryToggle ไปยัง ProfileBox
-                profileData={profileData} 
+              <ProfileBox
+                profileData={profileData}
                 updateMerryToggle={updateMerryToggle}
-                merryCurrentTime={merryCurrentTime} 
-                merryHobbies={merryHobbies}
-                merryImages={merryImages}
+                merryCurrentTime={merryCurrentTime}
+                merryImages={
+                  merryImages.find(
+                    (item) => item.user_other === profileData.user_other,
+                  )?.images || []
+                }
+                merryHobbies={
+                  merryHobbies.find(
+                    (item) => item.user_other === profileData.user_other,
+                  )?.hobbies || []
+                }
+                onPreviewClick={handlePreviewClick} // ส่งฟังก์ชัน onPreviewClick
+                selectedProfile={selectedProfile}
               />
               <div className="h-[1px] w-full bg-fourth-300"></div>
             </Fragment>
