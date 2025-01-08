@@ -1,7 +1,6 @@
 import { useRouter } from "next/router";
 import axios from "axios";
 import React, { useState, useEffect, Fragment } from "react";
-import DeleteConfirmationModal from "@/components/admin/DeleteConfirmationModal";
 import { GoHeartFill } from "react-icons/go";
 import {
   HiMiniMapPin,
@@ -13,6 +12,8 @@ import { jwtDecode } from "jwt-decode";
 import { doc } from "prettier";
 import { set } from "mongoose";
 import { MatchlistProfile } from "@/components/profile/MatchlistProfile";
+import Loading from "@/components/loading/loading";
+
 
 
 function MerryCountBox({ count = 0, text = "Merry", twoHearts = false }) {
@@ -223,14 +224,16 @@ export default function MerryList() {
 
   useEffect(() => {
     const fetchProfiles = async () => {
-      const token = localStorage.getItem("token"); // ดึง token จาก localStorage
+      const token = localStorage.getItem("token");
       if (!token) {
-        //  ถ้าไม่มี token ให้แสดงข้อความแจ้งเตือนและเปลี่ยนเส้นทางไปยังหน้า login
-        alert("Please log in to continue.");
-        router.push("/login"); // ส่งไปยังหน้า login
-        return; // ออกจากฟังก์ชัน
+        setLoading(true); // เปิดหน้าโหลด
+        setTimeout(() => {
+          // alert("Please log in to continue.")
+          router.push("/login"); // ส่งไปยังหน้า login หลังรอ 2 วินาที
+        }, 3000);
+        return;
       }
-
+  
       try {
         const decodedToken = jwtDecode(token); //    ถอดรหัส token ด้วย jwtDecode
         const userMasterId = decodedToken.id; //  ดึง userMasterId จาก decodedToken payload
@@ -254,7 +257,8 @@ export default function MerryList() {
         setSelectedProfile(response.data.matches[0] || null);
       } catch (error) {
         console.error("Invalid token or fetch error:", error);
-        alert("Invalid session. Please log in again.");
+        // alert("Invalid session. Please log in again.");
+        setLoading(true);
         localStorage.removeItem("token");
         router.push("/login");
         return;
@@ -308,9 +312,12 @@ export default function MerryList() {
 
   if (loading) {
     return (
-      <main className="flex h-screen items-center justify-center bg-utility-bgMain">
-        <span className="loading loading-spinner loading-lg"></span>
-      </main>
+      <Loading/>
+
+      // <main className="flex h-screen items-center justify-center bg-utility-bgMain">
+      //   <span className="loading loading-spinner loading-lg"></span>
+      // </main>
+
     );
   }
 
