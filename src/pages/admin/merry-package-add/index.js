@@ -9,7 +9,7 @@ import { jwtDecode } from "jwt-decode";
 function MerryPackageAdd() {
   const router = useRouter(); // เรียกใช้ useRouter
 
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false); // Modal Open
   const [details, setDetails] = useState([{ id: 1, text: "" }]); // state สำหรับเก็บรายการ Detail โดยเริ่มต้นที่ 1 และ text = ""
 
   const [packageName, setPackageName] = useState("");
@@ -70,9 +70,10 @@ function MerryPackageAdd() {
       );
       console.log("Response from APIIIII:", res.data);
       if (res.status === 201) {
-        alert("Package added successfully!");
+        //alert("Package added successfully!"); // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+        setIsModalOpen(true);
         //resetForm(); // ล้างฟอร์มหลังจากสำเร็จ
-        router.push("/admin/merry-package-list");
+        //router.push("/admin/merry-package-list");
       }
     } catch (error) {
       console.error(error);
@@ -108,6 +109,7 @@ function MerryPackageAdd() {
   const closeModal = () => {
     setIsModalOpen(false);
     setDetailToDelete(null);
+    router.push("/admin/merry-package-list");
   };
 
   // updateDetail Step2: ใช้ map เพื่อวนลูปข้อมูล details
@@ -328,14 +330,17 @@ function MerryPackageAdd() {
         </div>
       </main>
 
-      {/* Delete Confirm Modal */}
+      {/*  Modal */}
       <DeleteConfirmationModal
         isOpen={isModalOpen} // isModalOpen = true เปิดใช้งาน
         onClose={closeModal} // deleteDetail Step3.2: เรียกใช้ function closeModal เพื่อยกเลิก
-        onConfirm={handleDelete} // ลบรายการโดยกดยืนยัน deleteDetail Step5: เรียกใข้ function: handleDelete
-        message="Are you sure you want to delete this detail?"
-        confirmLabel="Yes, I want to delete"
-        cancelLabel="No, I don't want"
+        onConfirm={() => {
+          setIsModalOpen(false);
+          router.push("/admin/merry-package-list");
+        }}
+        title="Success"
+        message="Package added successfully!"
+        confirmLabel="Submit"
       />
     </div>
   );

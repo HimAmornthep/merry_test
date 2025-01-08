@@ -32,6 +32,8 @@ const cloudinaryUpload = (fileBuffer) => {
   });
 };
 
+const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
+
 export default async function handle(req, res) {
   if (req.method === "POST") {
     // ใช้ multerUpload จัดการอัปโหลดไฟล์จาก FormData
@@ -90,9 +92,10 @@ export default async function handle(req, res) {
           iconUrl = uploadResult.url; // เก็บเฉพาะ URL ของรูปภาพ
         }
 
+        const currency_id = "11"; //THB
         const query = `
-            INSERT INTO packages (name_package, description, limit_match, price, icon_url, created_date, updated_date, created_by)
-            VALUES ($1, $2, $3, $4, $5, NOW(), NOW(), $6)
+            INSERT INTO packages (name_package, description, limit_match, price, icon_url, created_date, updated_date, created_by, currency_id)
+            VALUES ($1, $2, $3, $4, $5, NOW(), NOW(), $6, $7) RETURNING package_id  
           `;
         const values = [
           package_name,
@@ -101,9 +104,30 @@ export default async function handle(req, res) {
           numericPrice,
           iconUrl,
           adminId, // ใช้ adminId จาก token
+          currency_id,
         ];
 
-        await connectionPool.query(query, values);
+        const result = await connectionPool.query(query, values);
+        const packageId = result.rows[0].package_id;
+
+        // เพิ่ม Package ใน Stripe
+        const product = await stripe.products.create({
+          name: package_name,
+          description: `Limit: ${merry_limit}, Price: ${numericPrice}`,
+          images: iconUrl ? [iconUrl] : [],
+        });
+
+        const stripePrice = await stripe.prices.create({
+          product: product.id,
+          unit_amount: numericPrice * 100, // ราคาในหน่วย cents
+          currency: "thb",
+        });
+
+        // บันทึก price_id ของ Stripe ลงใน Database
+        await connectionPool.query(
+          `UPDATE packages SET stripe_price_id = $1 WHERE package_id = $2`,
+          [stripePrice.id, packageId],
+        );
 
         return res.status(201).json({ message: "Package added successfully!" });
       } catch (error) {

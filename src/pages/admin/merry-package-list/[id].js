@@ -366,6 +366,7 @@ function MerryPackageEdit() {
         isOpen={isModalOpen} // isModalOpen = true เปิดใช้งาน
         onClose={closeModal} // deleteDetail Step3.2: เรียกใช้ function closeModal เพื่อยกเลิก
         onConfirm={handleDeletePackage} // ลบรายการโดยกดยืนยัน deleteDetail Step5: เรียกใข้ function: handleDelete
+        title="Delete Confirmation"
         message="Are you sure you want to delete this detail?"
         confirmLabel="Yes, I want to delete"
         cancelLabel="No, I don't want"
