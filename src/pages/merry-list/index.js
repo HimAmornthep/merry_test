@@ -1,7 +1,7 @@
 import { useRouter } from "next/router";
 import axios from "axios";
 import React, { useState, useEffect, Fragment } from "react";
-
+import DeleteConfirmationModal from "@/components/admin/DeleteConfirmationModal";
 import { GoHeartFill } from "react-icons/go";
 import {
   HiMiniMapPin,
@@ -10,9 +10,10 @@ import {
 import { IoMdEye } from "react-icons/io";
 import { NavBar, Footer } from "@/components/NavBar";
 import { jwtDecode } from "jwt-decode";
-import { PreviewProfile } from "@/components/profile/PreviewProfile";
 import { doc } from "prettier";
 import { set } from "mongoose";
+import { MatchlistProfile } from "@/components/profile/MatchlistProfile";
+
 
 function MerryCountBox({ count = 0, text = "Merry", twoHearts = false }) {
   return (
@@ -99,30 +100,8 @@ function ProfileBox({
             <IoMdEye className="size-5 md:size-6" />
           </button>
 
-          <dialog id="preview-profile-desktop" className="modal">
-            <div className="modal-box relative bg-white p-6">
-              <form method="dialog">
-                <button className="btn btn-circle btn-ghost btn-sm h-10 w-10">
-                  ✕
-                </button>
-              </form>
-              {selectedProfile && (
-                <PreviewProfile
-                  name={selectedProfile.name}
-                  age={selectedProfile.age}
-                  city={selectedProfile.city_name}
-                  location={selectedProfile.location_name}
-                  sexIdentity={selectedProfile.sexual_identity}
-                  sexPref={selectedProfile.sexual_preference}
-                  racialPref={selectedProfile.racial_preference}
-                  meetingInterest={selectedProfile.meeting_interest}
-                  aboutMe={selectedProfile.about_me}
-                  hobby={selectedProfile.hobbies}
-                  image={selectedProfile.images}
-                />
-              )}
-            </div>
-          </dialog>
+
+
 
           {/* Merry button */}
           <button
@@ -389,9 +368,41 @@ export default function MerryList() {
             </Fragment>
           ))}
         </div>
+
+
+       
+          
       </section>
 
+
+      <dialog id="preview-profile-desktop" className="modal overflow-y-auto">
+       
+    
+       {selectedProfile && (
+         <MatchlistProfile
+           name={selectedProfile.name}
+           age={selectedProfile.age}
+           city={selectedProfile.city_name}
+           location={selectedProfile.location_name}
+           sexIdentity={selectedProfile.sexual_identity}
+           sexPref={selectedProfile.sexual_preference}
+           racialPref={selectedProfile.racial_preference}
+           meetingInterest={selectedProfile.meeting_interest}
+           aboutMe={selectedProfile.about_me}
+           hobby={selectedProfile.hobbies}
+           image={selectedProfile.images}
+         />
+       )}
+  
+   </dialog>
+
+
+
       <Footer />
+
+
+
+
     </main>
   );
 }
