@@ -30,7 +30,7 @@ export default async function handler(req, res) {
 
       // ตรวจสอบความสมบูรณ์ของข้อมูลที่ส่งมาว่าไม่ว่างเปล่า
       if (!issue || !description) {
-        return res.status(400).json({ error: "Missing required fields" }); // ขาดฟิลด์ที่จำเป็น
+        return res.status(400).json({ error: "Please complete all required details to proceed." }); // ขาดฟิลด์ที่จำเป็น
       }
 
       // แสดงข้อมูลที่ได้รับจาก frontend ใน console
