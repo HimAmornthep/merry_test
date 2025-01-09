@@ -85,7 +85,6 @@ function RegisterPage() {
             label: loc.location_name,
           })),
         );
-
         setAllCities(response.data.city);
       } catch (error) {
         console.error("Error fetching data:", error);
