@@ -9,6 +9,7 @@ import axios from "axios";
 import { useRouter } from "next/router";
 import DeleteConfirmationModal from "@/components/admin/DeleteConfirmationModal";
 import { jwtDecode } from "jwt-decode";
+import { useAdminAuth } from "@/contexts/AdminAuthContext";
 
 function MerryPackageList() {
   const [packages, setPackages] = useState([]);
@@ -16,26 +17,21 @@ function MerryPackageList() {
   const [searchQuery, setSearchQuery] = useState(""); // for Search
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [detailToDelete, setDetailToDelete] = useState(null); // state สำหรับ delete โดยเก็บค่า id ของแถวนั้นๆ
-  const [loading, setLoading] = useState(true); // State for loading
+  const [authLoading, setAuthLoading] = useState(true);
+  const [dataLoading, setDataLoading] = useState(true);
 
+  const { logout } = useAdminAuth(); // ดึง logout จาก Context
   // ฟังก์ชันดึงข้อมูล package
   const fetchPackages = async () => {
     try {
       const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
-      setLoading(true);
       const res = await axios.get(`${apiBaseUrl}/api/admin/packages`);
       setPackages(res.data); // เก็บข้อมูลใน state
     } catch (error) {
       console.error("Error fetching packages:", error);
     } finally {
-      setLoading(false);
+      setDataLoading(false);
     }
-  };
-
-  // Logout function in case token is invalid
-  const logout = () => {
-    localStorage.removeItem("token");
-    router.push("/admin/login");
   };
 
   // ฟังก์ชันสำหรับจัดการการเปลี่ยนแปลงใน Search
@@ -108,18 +104,17 @@ function MerryPackageList() {
 
   // Verify authentication
   useEffect(() => {
-    const token = localStorage.getItem("token");
-
+    const token = localStorage.getItem("adminToken");
     if (!token) {
       router.push("/admin/login");
     } else {
       try {
         const decodedToken = jwtDecode(token);
         const now = Date.now() / 1000;
-
         if (decodedToken.exp < now) {
           logout(); // Token expired, redirect to login
         } else {
+          setAuthLoading(false);
           fetchPackages(); // Fetch package data
         }
       } catch (error) {
@@ -128,6 +123,10 @@ function MerryPackageList() {
       }
     }
   }, [router]);
+
+  if (authLoading) {
+    return <div></div>; // แสดง Loading Spinner หรือข้อความขณะกำลังตรวจสอบ
+  }
 
   return (
     <div className="flex h-screen bg-gray-100">
@@ -153,80 +152,88 @@ function MerryPackageList() {
 
         {/* Table */}
         <div className="overflow-x-auto px-12 py-4">
-          <table className="min-w-full rounded-lg bg-white shadow-md">
-            <thead className="bg-fourth-400">
-              <tr>
-                <th className="rounded-tl-lg px-6 py-3 text-center font-medium text-gray-600"></th>
-                <th className="px-6 py-3 text-center text-sm font-medium leading-5 text-fourth-800"></th>
-                <th className="px-6 py-3 text-center text-sm font-medium leading-5 text-fourth-800">
-                  Icon
-                </th>
-                <th className="px-6 py-3 text-center text-sm font-medium leading-5 text-fourth-800">
-                  Package Name
-                </th>
-                <th className="px-6 py-3 text-center text-sm font-medium leading-5 text-fourth-800">
-                  Merry Limit
-                </th>
-                <th className="px-6 py-3 text-center text-sm font-medium leading-5 text-fourth-800">
-                  Created Date
-                </th>
-                <th className="px-6 py-3 text-center text-sm font-medium leading-5 text-fourth-800">
-                  Updated Date
-                </th>
-                <th className="rounded-tr-lg px-6 py-3 text-center font-medium text-gray-600"></th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredPackages.map((pkg, index) => (
-                <tr
-                  key={pkg.package_id}
-                  className="border-t text-center align-middle hover:bg-gray-50"
-                >
-                  <td className="px-6 py-4 align-middle">
-                    <span className="cursor-move">⋮⋮</span>
-                  </td>
-                  <td className="px-6 py-4 align-middle">{index + 1}</td>
-                  <td className="px-6 py-4 align-middle">
-                    {pkg.icon_url ? (
-                      <img
-                        src={pkg.icon_url}
-                        alt="Package Icon"
-                        className="mx-auto h-8 w-8 rounded-lg object-cover"
-                      />
-                    ) : (
-                      <span className="text-gray-500">No Image</span>
-                    )}
-                  </td>
-                  <td className="px-6 py-4 align-middle">{pkg.name_package}</td>
-                  <td className="px-6 py-4 align-middle">{pkg.limit_match}</td>
-                  <td className="px-6 py-4 align-middle">
-                    {new Date(pkg.created_date).toLocaleString()}
-                  </td>
-                  <td className="px-6 py-4 align-middle">
-                    {pkg.updated_date
-                      ? new Date(pkg.updated_date).toLocaleString()
-                      : "Not updated"}
-                  </td>
-                  <td className="px-6 py-4 align-middle">
-                    <div className="flex items-center justify-center gap-4">
-                      <FaTrashAlt
-                        className="cursor-pointer text-2xl text-primary-300"
-                        onClick={() => confirmDelete(pkg.package_id)}
-                      />
-                      <FaEdit
-                        className="cursor-pointer text-2xl text-primary-300"
-                        onClick={() =>
-                          router.push(
-                            `/admin/merry-package-list/${pkg.package_id}`,
-                          )
-                        }
-                      />
-                    </div>
-                  </td>
+          {dataLoading ? (
+            <div></div>
+          ) : (
+            <table className="min-w-full rounded-lg bg-white shadow-md">
+              <thead className="bg-fourth-400">
+                <tr>
+                  <th className="rounded-tl-lg px-6 py-3 text-center font-medium text-gray-600"></th>
+                  <th className="px-6 py-3 text-center text-sm font-medium leading-5 text-fourth-800"></th>
+                  <th className="px-6 py-3 text-center text-sm font-medium leading-5 text-fourth-800">
+                    Icon
+                  </th>
+                  <th className="px-6 py-3 text-center text-sm font-medium leading-5 text-fourth-800">
+                    Package Name
+                  </th>
+                  <th className="px-6 py-3 text-center text-sm font-medium leading-5 text-fourth-800">
+                    Merry Limit
+                  </th>
+                  <th className="px-6 py-3 text-center text-sm font-medium leading-5 text-fourth-800">
+                    Created Date
+                  </th>
+                  <th className="px-6 py-3 text-center text-sm font-medium leading-5 text-fourth-800">
+                    Updated Date
+                  </th>
+                  <th className="rounded-tr-lg px-6 py-3 text-center font-medium text-gray-600"></th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {filteredPackages.map((pkg, index) => (
+                  <tr
+                    key={pkg.package_id}
+                    className="border-t text-center align-middle hover:bg-gray-50"
+                  >
+                    <td className="px-6 py-4 align-middle">
+                      <span className="cursor-move">⋮⋮</span>
+                    </td>
+                    <td className="px-6 py-4 align-middle">{index + 1}</td>
+                    <td className="px-6 py-4 align-middle">
+                      {pkg.icon_url ? (
+                        <img
+                          src={pkg.icon_url}
+                          alt="Package Icon"
+                          className="mx-auto h-8 w-8 rounded-lg object-cover"
+                        />
+                      ) : (
+                        <span className="text-gray-500">No Image</span>
+                      )}
+                    </td>
+                    <td className="px-6 py-4 align-middle">
+                      {pkg.name_package}
+                    </td>
+                    <td className="px-6 py-4 align-middle">
+                      {pkg.limit_match}
+                    </td>
+                    <td className="px-6 py-4 align-middle">
+                      {new Date(pkg.created_date).toLocaleString()}
+                    </td>
+                    <td className="px-6 py-4 align-middle">
+                      {pkg.updated_date
+                        ? new Date(pkg.updated_date).toLocaleString()
+                        : "Not updated"}
+                    </td>
+                    <td className="px-6 py-4 align-middle">
+                      <div className="flex items-center justify-center gap-4">
+                        <FaTrashAlt
+                          className="cursor-pointer text-2xl text-primary-300"
+                          onClick={() => confirmDelete(pkg.package_id)}
+                        />
+                        <FaEdit
+                          className="cursor-pointer text-2xl text-primary-300"
+                          onClick={() =>
+                            router.push(
+                              `/admin/merry-package-list/${pkg.package_id}`,
+                            )
+                          }
+                        />
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
         </div>
       </main>
 

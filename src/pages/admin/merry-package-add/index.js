@@ -5,18 +5,20 @@ import { useRouter } from "next/router";
 import axios from "axios";
 import DeleteConfirmationModal from "@/components/admin/DeleteConfirmationModal";
 import { jwtDecode } from "jwt-decode";
+import { useAdminAuth } from "@/contexts/AdminAuthContext";
 
 function MerryPackageAdd() {
   const router = useRouter(); // เรียกใช้ useRouter
 
   const [isModalOpen, setIsModalOpen] = useState(false); // Modal Open
   const [details, setDetails] = useState([{ id: 1, text: "" }]); // state สำหรับเก็บรายการ Detail โดยเริ่มต้นที่ 1 และ text = ""
-
   const [packageName, setPackageName] = useState("");
   const [merryLimit, setMerryLimit] = useState("");
   const [price, setPrice] = useState(0);
-
+  const [authLoading, setAuthLoading] = useState(true);
   const [icon, setIcon] = useState(null);
+  const { logout } = useAdminAuth(); // ดึง logout จาก Context
+  const [isSaving, setIsSaving] = useState(false); // State สำหรับ Loading ขณะบันทึก
 
   const handleFileChange = (event) => {
     const file = event.target.files[0];
@@ -31,21 +33,23 @@ function MerryPackageAdd() {
 
   const handleAddPackage = async () => {
     try {
+      setIsSaving(true); // เริ่มสถานะ Loading
       const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
 
       // Validation ข้อมูลก่อนส่ง
       if (!packageName || !merryLimit === 0) {
         // || details.length
         alert("Please fill in all required fields.");
+        setIsSaving(false);
         return;
       }
 
       // ดึง Token จาก Local Storage หรือ Context
-      const token = localStorage.getItem("token");
-      console.log("This is Token from UI ADD", token);
+      const token = localStorage.getItem("adminToken");
 
       if (!token) {
         alert("You are not authenticated. Please log in.");
+        setIsSaving(false);
         return;
       }
 
@@ -68,7 +72,7 @@ function MerryPackageAdd() {
           },
         },
       );
-      console.log("Response from APIIIII:", res.data);
+
       if (res.status === 201) {
         //alert("Package added successfully!"); // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
         setIsModalOpen(true);
@@ -77,15 +81,9 @@ function MerryPackageAdd() {
       }
     } catch (error) {
       console.error(error);
-      if (
-        error.response &&
-        error.response.data &&
-        error.response.data.message
-      ) {
-        alert(error.response.data.message);
-      } else {
-        alert("An unexpected error occurred.");
-      }
+      alert(error.response?.data?.message || "An unexpected error occurred.");
+    } finally {
+      setIsSaving(false); // ยกเลิกสถานะ Loading หลังจากทำงานเสร็จ
     }
   };
 
@@ -131,30 +129,31 @@ function MerryPackageAdd() {
     setDetails(details.filter((detail) => detail.id !== id));
   };
 
+  // Verify authentication
   useEffect(() => {
-    const token = localStorage.getItem("token"); // ดึง token จาก localStorage
-    if (token) {
-      try {
-        const decoded = jwtDecode(token); // Decode Token
-        const now = Math.floor(Date.now() / 1000); // เวลา ณ ปัจจุบัน (ในหน่วยวินาที)
+    const token = localStorage.getItem("adminToken");
 
-        if (decoded.exp < now) {
-          // ตรวจสอบว่า Token หมดอายุหรือไม่
-          alert("Session expired. Please log in again.");
-          localStorage.removeItem("token"); // ลบ Token ที่หมดอายุ
-          router.push("/admin/login"); // Redirect ไปหน้า Login
-        }
-      } catch (err) {
-        console.error("Invalid token:", err);
-        alert("Invalid session. Please log in.");
-        localStorage.removeItem("token"); // ลบ Token ที่ไม่ถูกต้อง
-        router.push("/admin/login"); // Redirect ไปหน้า Login
-      }
-    } else {
-      alert("You are not logged in.");
+    if (!token) {
       router.push("/admin/login");
+    } else {
+      try {
+        const decodedToken = jwtDecode(token);
+        const now = Date.now() / 1000;
+        if (decodedToken.exp < now) {
+          logout(); // Token expired, redirect to login
+        } else {
+          setAuthLoading(false);
+        }
+      } catch (error) {
+        console.error("Token decoding error:", error);
+        logout(); // Invalid token, redirect to login
+      }
     }
   }, [router]);
+
+  if (authLoading) {
+    return <div></div>; // แสดง Loading Spinner หรือข้อความขณะกำลังตรวจสอบ
+  }
 
   return (
     <div className="flex h-screen bg-gray-50">
@@ -170,9 +169,10 @@ function MerryPackageAdd() {
               onClick: () => router.push("/admin/merry-package-list"),
             },
             {
-              label: "Create",
+              label: isSaving ? "Creating..." : "Create",
               type: "primary",
               onClick: handleAddPackage,
+              disabled: isSaving, // กำหนด disabled
             },
           ]}
         />

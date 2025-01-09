@@ -228,7 +228,12 @@ function PaymentMembership() {
           </h2>
           <div className="flex lg:hidden">
             <h3 className="mb-4 text-sm font-semibold text-gray-600 lg:text-lg">
-              {endDate ? new Date(endDate).toLocaleDateString("en-GB") : "N/A"}
+              <div>
+                Next billing :&nbsp;
+                {endDate
+                  ? new Date(endDate).toLocaleDateString("en-GB")
+                  : "N/A"}
+              </div>
             </h3>
           </div>
           <div className="mt-4 rounded-[24px] bg-white p-6 shadow">
@@ -236,9 +241,13 @@ function PaymentMembership() {
               <thead>
                 <tr>
                   <th className="mb-4 hidden text-sm font-semibold text-gray-600 lg:flex lg:text-lg">
-                    {endDate
-                      ? new Date(endDate).toLocaleDateString("en-GB")
-                      : "N/A"}
+                    <div>Next billing :&nbsp;</div>
+
+                    <div>
+                      {endDate
+                        ? new Date(endDate).toLocaleDateString("en-GB")
+                        : "N/A"}
+                    </div>
                   </th>
                 </tr>
               </thead>

@@ -10,6 +10,8 @@ export default function DeleteConfirmationModal({
   message,
   confirmLabel,
   cancelLabel,
+  confirmClassName = "rounded-full bg-pink-100 px-6 py-2 text-pink-500 hover:bg-pink-200",
+  cancelClassName = "rounded-full bg-red-500 px-6 py-2 text-white hover:bg-red-600",
 }) {
   if (!isOpen) return null;
 
@@ -19,8 +21,9 @@ export default function DeleteConfirmationModal({
         isOpen ? "opacity-100" : "opacity-0"
       }`}
     >
+      {/* ของเดิม  w-full --- Change to ---> w-auto */}
       <div
-        className={`[cubic-bezier(0.4, 0.0, 0.2, 1)] w-full max-w-md transform rounded-lg bg-white shadow-lg transition-transform duration-700 ${
+        className={`[cubic-bezier(0.4, 0.0, 0.2, 1)] w-auto max-w-lg transform rounded-3xl bg-white shadow-lg transition-transform duration-700 ${
           isOpen ? "scale-100 opacity-100" : "scale-75 opacity-0"
         }`}
       >
@@ -38,21 +41,15 @@ export default function DeleteConfirmationModal({
           <p className="text-gray-700">{message}</p>
         </div>
 
-        <div className="flex justify-end space-x-4 p-4">
+        <div className="flex space-x-4 p-4">
           {/* // deleteDetail Step4: เมื่อกด "Yes, I want to delete".*/}
-          <button
-            onClick={onConfirm}
-            className="rounded-full bg-pink-100 px-6 py-2 text-pink-500 hover:bg-pink-200"
-          >
+          <button onClick={onConfirm} className={confirmClassName}>
             {confirmLabel}
           </button>
           {/*// deleteDetail Step3.1: การยกเลิก model: 1*/}
           {/* ปุ่ม Cancel: แสดงเฉพาะเมื่อ cancelLabel มีค่า */}
           {cancelLabel && (
-            <button
-              onClick={onClose}
-              className="rounded-full bg-red-500 px-6 py-2 text-white hover:bg-red-600"
-            >
+            <button onClick={onClose} className={cancelClassName}>
               {cancelLabel}
             </button>
           )}
