@@ -23,21 +23,24 @@ export const validateRacialPreferences = (racialPreferences) => {
   if (!racialPreferences) {
     return "Please select racial preferences";
   }
-  return ""; 
+  return "";
 };
 
 export const validateMeetingInterests = (meetingInterests) => {
   if (!meetingInterests) {
     return "Please select meeting interests";
   }
-  return ""; 
+  return "";
 };
 
 export const validatehobbies = (hobbies) => {
   if (!hobbies || hobbies.length === 0) {
-    return "Please select hobbies / interests";
+    return "Please select hobbies / interests.";
   }
-  return ""; 
+  if (hobbies.length > 10) {
+    return "You can only select up to 10 hobbies / interests.";
+  }
+  return ""; // ถ้าผ่านเงื่อนไขทั้งหมด จะไม่มีข้อความเตือน
 };
 
 export const validateAboutme = (value) => {
@@ -65,11 +68,11 @@ export const validateRequiredFieldsStep2 = ({
     !racialIdentities ||
     !racialPreferences ||
     !meetingInterests ||
-    (Array.isArray(hobbies) && hobbies.length === 0) || 
+    (Array.isArray(hobbies) && hobbies.length === 0) ||
     !value ||
-    (typeof value === "string" && value.trim() === "") 
+    (typeof value === "string" && value.trim() === "")
   ) {
     return "Please fill in all the required information";
   }
-  return ""; 
+  return "";
 };
