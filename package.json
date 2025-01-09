@@ -19,6 +19,7 @@
     "cloudinary": "^2.5.1",
     "firebase-admin": "^13.0.2",
     "framer-motion": "^11.16.0",
+
     "jsonwebtoken": "^9.0.2",
     "jwt-decode": "^4.0.0",
     "mongodb": "^6.11.0",
