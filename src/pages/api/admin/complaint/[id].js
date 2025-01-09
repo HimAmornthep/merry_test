@@ -3,6 +3,28 @@ import connectionPool from "@/utils/db"; // ใช้ connectionPool ที่�
 export default async function handler(req, res) {
   const { id } = req.query; // รับ ID จาก URL
 
+  // ฟังก์ชันฟอร์แมตวันที่และเวลา
+  const formatToThailandTime = (utcDate) => {
+    if (!utcDate) return "Invalid Date";
+
+    const date = new Date(utcDate); // แปลงเป็น Date object
+    const formattedDate = date.toLocaleString("en-GB", {
+      timeZone: "Asia/Bangkok",
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: true, // ใช้ AM/PM
+    });
+
+    // เอา `,` ออกและปรับ AM/PM เป็นตัวใหญ่
+    return formattedDate
+      .replace(",", "")
+      .replace("am", "AM")
+      .replace("pm", "PM");
+  };
+
   if (req.method === "GET") {
     try {
       // ตรวจสอบว่ามี id หรือไม่
@@ -41,7 +63,12 @@ export default async function handler(req, res) {
         return res.status(404).json({ error: "Complaint not found" });
       }
 
-      res.status(200).json(result.rows[0]); // ส่งข้อมูล complaint
+      // แปลงเวลาในฟิลด์ resolve_date และ canceled_date เป็นเวลาไทย
+      const data = result.rows[0];
+      data.resolve_date = formatToThailandTime(data.resolve_date);
+      data.canceled_date = formatToThailandTime(data.canceled_date);
+
+      res.status(200).json(data); // ส่งข้อมูล complaint
     } catch (error) {
       console.error("Error fetching complaint detail:", error.message);
       res
@@ -57,39 +84,7 @@ export default async function handler(req, res) {
           .status(400)
           .json({ error: "Status and adminId are required" });
       }
-      {
-        /* 
-   
-      // เตรียมคำสั่ง SQL และพารามิเตอร์
-      let query;
-      const params = [status];
 
-      if (status === "Resolved") {
-        query = `
-          UPDATE complaint_admin 
-          SET status = $1, resolve_date = $2 
-          WHERE complaint_id = $3
-        `;
-        params.push(new Date().toISOString(), id);
-      } else if (status === "Cancel") {
-        query = `
-          UPDATE complaint_admin 
-          SET status = $1, canceled_date = $2 
-          WHERE complaint_id = $3
-        `;
-        params.push(new Date().toISOString(), id);
-      } else {
-        query = `
-          UPDATE complaint_admin 
-          SET status = $1 
-          WHERE complaint_id = $2
-        `;
-        params.push(id);
-      }
-
-      await connectionPool.query(query, params);
-*/
-      }
       let query = `
       UPDATE complaint_admin 
       SET status = $1, 

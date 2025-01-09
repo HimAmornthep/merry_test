@@ -32,6 +32,25 @@ const cloudinaryUpload = (fileBuffer) => {
   });
 };
 
+// ฟังก์ชันฟอร์แมตวันที่และเวลา
+const formatToThailandTime = (utcDate) => {
+  if (!utcDate) return "Invalid Date";
+
+  const date = new Date(utcDate); // แปลงเป็น Date object
+  const formattedDate = date.toLocaleString("en-GB", {
+    timeZone: "Asia/Bangkok",
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: true, // ใช้ AM/PM
+  });
+
+  // เอา `,` ออกและปรับ AM/PM เป็นตัวใหญ่
+  return formattedDate.replace(",", "").replace("am", "AM").replace("pm", "PM");
+};
+
 const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
 
 export default async function handle(req, res) {
@@ -139,9 +158,33 @@ export default async function handle(req, res) {
   } else if (req.method === "GET") {
     // ดึงข้อมูลแพ็กเกจทั้งหมด
     try {
-      const query = `SELECT * FROM packages ORDER BY created_date DESC`;
+      const query = `
+      SELECT 
+        package_id, 
+        name_package, 
+        description, 
+        limit_match, 
+        price, 
+        icon_url, 
+        created_date,
+        updated_date,
+        created_by, 
+        currency_id 
+      FROM packages 
+      ORDER BY created_date DESC
+    `;
       const { rows } = await connectionPool.query(query);
-      return res.status(200).json(rows);
+
+      // ฟอร์แมตวันที่สำหรับทุกแถว
+      const formattedRows = rows.map((row) => ({
+        ...row,
+        created_date: formatToThailandTime(row.created_date),
+        updated_date: row.updated_date
+          ? formatToThailandTime(row.updated_date)
+          : "Not updated",
+      }));
+
+      return res.status(200).json(formattedRows);
     } catch (error) {
       console.error("Database Error: ", error.message);
       return res.status(500).json({ error: "Failed to fetch packages." });

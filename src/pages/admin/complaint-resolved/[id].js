@@ -114,8 +114,7 @@ function ComplaintResolved() {
           </div>
           <div className="mb-6 border-t pt-6">
             <p className="mb-4 text-lg font-semibold text-gray-500">
-              <strong>Resolved Date:</strong>{" "}
-              {new Date(complaint.resolve_date).toLocaleString()}
+              <strong>Resolved Date:</strong> {complaint.resolve_date}
             </p>
           </div>
         </div>

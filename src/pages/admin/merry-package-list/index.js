@@ -21,11 +21,13 @@ function MerryPackageList() {
   const [dataLoading, setDataLoading] = useState(true);
 
   const { logout } = useAdminAuth(); // ดึง logout จาก Context
+
   // ฟังก์ชันดึงข้อมูล package
   const fetchPackages = async () => {
     try {
       const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
       const res = await axios.get(`${apiBaseUrl}/api/admin/packages`);
+      console.log("Fetched Packages:", res.data); // ตรวจสอบข้อมูลที่ได้
       setPackages(res.data); // เก็บข้อมูลใน state
     } catch (error) {
       console.error("Error fetching packages:", error);
@@ -206,12 +208,10 @@ function MerryPackageList() {
                       {pkg.limit_match}
                     </td>
                     <td className="px-6 py-4 align-middle">
-                      {new Date(pkg.created_date).toLocaleString()}
+                      {pkg.created_date}
                     </td>
                     <td className="px-6 py-4 align-middle">
-                      {pkg.updated_date
-                        ? new Date(pkg.updated_date).toLocaleString()
-                        : "Not updated"}
+                      {pkg.updated_date ? pkg.updated_date : "Not updated"}
                     </td>
                     <td className="px-6 py-4 align-middle">
                       <div className="flex items-center justify-center gap-4">
