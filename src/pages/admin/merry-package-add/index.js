@@ -5,18 +5,23 @@ import { useRouter } from "next/router";
 import axios from "axios";
 import DeleteConfirmationModal from "@/components/admin/DeleteConfirmationModal";
 import { jwtDecode } from "jwt-decode";
+import { useAdminAuth } from "@/contexts/AdminAuthContext";
 
 function MerryPackageAdd() {
   const router = useRouter(); // เรียกใช้ useRouter
 
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false); // Modal Open
+  const [isModalValidation, setIsModalValidation] = useState(false);
+  const [modalMessage, setModalMessage] = useState("");
   const [details, setDetails] = useState([{ id: 1, text: "" }]); // state สำหรับเก็บรายการ Detail โดยเริ่มต้นที่ 1 และ text = ""
-
   const [packageName, setPackageName] = useState("");
   const [merryLimit, setMerryLimit] = useState("");
   const [price, setPrice] = useState(0);
-
+  const [authLoading, setAuthLoading] = useState(true);
   const [icon, setIcon] = useState(null);
+  const { logout } = useAdminAuth(); // ดึง logout จาก Context
+  const [isSaving, setIsSaving] = useState(false); // State สำหรับ Loading ขณะบันทึก
+  const [validationErrors, setValidationErrors] = useState([]);
 
   const handleFileChange = (event) => {
     const file = event.target.files[0];
@@ -31,21 +36,55 @@ function MerryPackageAdd() {
 
   const handleAddPackage = async () => {
     try {
+      setIsSaving(true); // เริ่มสถานะ Loading
       const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
 
       // Validation ข้อมูลก่อนส่ง
-      if (!packageName || !merryLimit === 0) {
+      if (!packageName || packageName.trim() === "") {
         // || details.length
-        alert("Please fill in all required fields.");
+        setModalMessage("Package name is required.");
+        setIsModalValidation(true);
+        setIsSaving(false);
+        return;
+      }
+
+      if (!merryLimit) {
+        setModalMessage("Merry limit is required."); // ข้อความที่จะปรากฏใน Modal
+        setIsModalValidation(true); // เปิด Modal
+        setIsSaving(false);
+        return;
+      }
+
+      if (!price || isNaN(price) || price <= 0) {
+        setModalMessage("price is required."); // ข้อความที่จะปรากฏใน Modal
+        setIsModalValidation(true); // เปิด Modal
+        setIsSaving(false);
+        return;
+      }
+
+      if (!icon) {
+        setModalMessage("Icon image is required.");
+        setIsModalValidation(true);
+        setIsSaving(false);
+        return;
+      }
+
+      if (
+        details.length === 0 ||
+        details.every((detail) => detail.text.trim() === "")
+      ) {
+        setModalMessage("At least one valid detail is required.");
+        setIsModalValidation(true);
+        setIsSaving(false);
         return;
       }
 
       // ดึง Token จาก Local Storage หรือ Context
-      const token = localStorage.getItem("token");
-      console.log("This is Token from UI ADD", token);
+      const token = localStorage.getItem("adminToken");
 
       if (!token) {
         alert("You are not authenticated. Please log in.");
+        setIsSaving(false);
         return;
       }
 
@@ -68,23 +107,18 @@ function MerryPackageAdd() {
           },
         },
       );
-      console.log("Response from APIIIII:", res.data);
+
       if (res.status === 201) {
-        alert("Package added successfully!");
+        //alert("Package added successfully!"); // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+        setIsModalOpen(true);
         //resetForm(); // ล้างฟอร์มหลังจากสำเร็จ
-        router.push("/admin/merry-package-list");
+        //router.push("/admin/merry-package-list");
       }
     } catch (error) {
       console.error(error);
-      if (
-        error.response &&
-        error.response.data &&
-        error.response.data.message
-      ) {
-        alert(error.response.data.message);
-      } else {
-        alert("An unexpected error occurred.");
-      }
+      alert(error.response?.data?.message || "An unexpected error occurred.");
+    } finally {
+      setIsSaving(false); // ยกเลิกสถานะ Loading หลังจากทำงานเสร็จ
     }
   };
 
@@ -108,6 +142,7 @@ function MerryPackageAdd() {
   const closeModal = () => {
     setIsModalOpen(false);
     setDetailToDelete(null);
+    router.push("/admin/merry-package-list");
   };
 
   // updateDetail Step2: ใช้ map เพื่อวนลูปข้อมูล details
@@ -129,30 +164,31 @@ function MerryPackageAdd() {
     setDetails(details.filter((detail) => detail.id !== id));
   };
 
+  // Verify authentication
   useEffect(() => {
-    const token = localStorage.getItem("token"); // ดึง token จาก localStorage
-    if (token) {
-      try {
-        const decoded = jwtDecode(token); // Decode Token
-        const now = Math.floor(Date.now() / 1000); // เวลา ณ ปัจจุบัน (ในหน่วยวินาที)
+    const token = localStorage.getItem("adminToken");
 
-        if (decoded.exp < now) {
-          // ตรวจสอบว่า Token หมดอายุหรือไม่
-          alert("Session expired. Please log in again.");
-          localStorage.removeItem("token"); // ลบ Token ที่หมดอายุ
-          router.push("/admin/login"); // Redirect ไปหน้า Login
-        }
-      } catch (err) {
-        console.error("Invalid token:", err);
-        alert("Invalid session. Please log in.");
-        localStorage.removeItem("token"); // ลบ Token ที่ไม่ถูกต้อง
-        router.push("/admin/login"); // Redirect ไปหน้า Login
-      }
-    } else {
-      alert("You are not logged in.");
+    if (!token) {
       router.push("/admin/login");
+    } else {
+      try {
+        const decodedToken = jwtDecode(token);
+        const now = Date.now() / 1000;
+        if (decodedToken.exp < now) {
+          logout(); // Token expired, redirect to login
+        } else {
+          setAuthLoading(false);
+        }
+      } catch (error) {
+        console.error("Token decoding error:", error);
+        logout(); // Invalid token, redirect to login
+      }
     }
   }, [router]);
+
+  if (authLoading) {
+    return <div></div>; // แสดง Loading Spinner หรือข้อความขณะกำลังตรวจสอบ
+  }
 
   return (
     <div className="flex h-screen bg-gray-50">
@@ -168,9 +204,10 @@ function MerryPackageAdd() {
               onClick: () => router.push("/admin/merry-package-list"),
             },
             {
-              label: "Create",
+              label: isSaving ? "Creating..." : "Create",
               type: "primary",
               onClick: handleAddPackage,
+              disabled: isSaving, // กำหนด disabled
             },
           ]}
         />
@@ -328,14 +365,29 @@ function MerryPackageAdd() {
         </div>
       </main>
 
-      {/* Delete Confirm Modal */}
+      {/*  Modal */}
       <DeleteConfirmationModal
         isOpen={isModalOpen} // isModalOpen = true เปิดใช้งาน
         onClose={closeModal} // deleteDetail Step3.2: เรียกใช้ function closeModal เพื่อยกเลิก
-        onConfirm={handleDelete} // ลบรายการโดยกดยืนยัน deleteDetail Step5: เรียกใข้ function: handleDelete
-        message="Are you sure you want to delete this detail?"
-        confirmLabel="Yes, I want to delete"
-        cancelLabel="No, I don't want"
+        onConfirm={() => {
+          setIsModalOpen(false);
+          router.push("/admin/merry-package-list");
+        }}
+        title="Success"
+        message="Package added successfully!"
+        confirmLabel="Submit"
+      />
+
+      {/*  Modal Validation */}
+      <DeleteConfirmationModal
+        isOpen={isModalValidation} // isModalOpen = true เปิดใช้งาน
+        onClose={() => setIsModalValidation(false)}
+        onConfirm={() => {
+          setIsModalValidation(false);
+        }}
+        title="Validation Error"
+        message={modalMessage}
+        confirmLabel="Submit"
       />
     </div>
   );

@@ -5,13 +5,40 @@ import { useRouter } from "next/router";
 import { useState, useEffect } from "react";
 import axios from "axios";
 import { jwtDecode } from "jwt-decode";
+import { useAdminAuth } from "@/contexts/AdminAuthContext";
 
 function MerryPackageEdit() {
   const router = useRouter();
   const { id } = router.query; // ดึง `id` จาก URL
 
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false);
+  const [successMessage, setSuccessMessage] = useState(""); // สำหรับข้อความใน modal ลองสร้างเทสแทนการส่งตรง
+  const [authLoading, setAuthLoading] = useState(true);
+
+  const { logout } = useAdminAuth(); // ดึง logout จาก Context
+
   const [isSaving, setIsSaving] = useState(false);
+  // Verify authentication
+  useEffect(() => {
+    const token = localStorage.getItem("adminToken");
+    if (!token) {
+      router.push("/admin/login");
+    } else {
+      try {
+        const decodedToken = jwtDecode(token);
+        const now = Date.now() / 1000;
+        if (decodedToken.exp < now) {
+          logout(); // Token expired, redirect to login
+        } else {
+          setAuthLoading(false); // Authentication ผ่าน
+        }
+      } catch (error) {
+        console.error("Token decoding error:", error);
+        logout(); // Invalid token, redirect to login
+      }
+    }
+  }, [router]);
 
   // deleteDetail Step3.3: เรียกใช้ setIsModalOpen เพื่อ false ปิดหน้า Modal
   const closeModal = () => {
@@ -104,15 +131,9 @@ function MerryPackageEdit() {
   };
 
   const handleSave = async () => {
+    const token = localStorage.getItem("adminToken");
     if (!id) {
       alert("Invalid package ID.");
-      return;
-    }
-
-    const token = localStorage.getItem("token");
-    if (!token) {
-      alert("You are not logged in. Please log in again.");
-      router.push("/admin/login");
       return;
     }
 
@@ -124,10 +145,7 @@ function MerryPackageEdit() {
     if (newIcon) formData.append("icon", newIcon); // เพิ่มรูปภาพใหม่ถ้ามี
 
     try {
-      console.log("before put");
-      console.log("Check Tokennn", token);
       const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
-      console.log("API Base URL:", apiBaseUrl);
 
       const response = await axios.put(
         `${apiBaseUrl}/api/admin/packages/${id}`,
@@ -148,8 +166,8 @@ function MerryPackageEdit() {
         }));
       }
 
-      alert("Package updated successfully!");
-      router.push("/admin/merry-package-list");
+      setSuccessMessage("Package updated successfully!"); // ตั้งข้อความ
+      setIsSuccessModalOpen(true); // เปิด modal
     } catch (error) {
       console.error("Error updating package:", error);
       console.log(error);
@@ -157,6 +175,10 @@ function MerryPackageEdit() {
       alert("Failed to update package.");
     }
   };
+
+  if (authLoading) {
+    return <div></div>; // หรือใช้ spinner component ของคุณ
+  }
 
   return (
     <div className="flex h-screen bg-gray-50">
@@ -361,14 +383,31 @@ function MerryPackageEdit() {
           </div>
         </div>
       </main>
-      {/* Delete Confirm Modal */}
+      {/* Delete Confirm Modal Details */}
       <DeleteConfirmationModal
         isOpen={isModalOpen} // isModalOpen = true เปิดใช้งาน
-        onClose={closeModal} // deleteDetail Step3.2: เรียกใช้ function closeModal เพื่อยกเลิก
-        onConfirm={handleDeletePackage} // ลบรายการโดยกดยืนยัน deleteDetail Step5: เรียกใข้ function: handleDelete
+        onClose={closeModal}
+        onConfirm={handleDeletePackage}
+        title="Delete Confirmation"
         message="Are you sure you want to delete this detail?"
         confirmLabel="Yes, I want to delete"
         cancelLabel="No, I don't want"
+      />
+
+      {/* Edit Modal */}
+      <DeleteConfirmationModal
+        isOpen={isSuccessModalOpen}
+        onClose={() => {
+          setIsSuccessModalOpen(false); // ปิด modal
+        }}
+        title="Success"
+        message={successMessage}
+        confirmLabel="OK"
+        cancelLabel={null} // ไม่แสดงปุ่ม Cancel
+        onConfirm={() => {
+          setIsSuccessModalOpen(false); // ปิด modal
+          router.push("/admin/merry-package-list"); // เปลี่ยนหน้าเมื่อกดยืนยัน
+        }}
       />
     </div>
   );

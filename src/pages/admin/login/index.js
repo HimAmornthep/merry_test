@@ -12,6 +12,7 @@ function CustomInput({
   label = "Label",
   placeholder,
   className = "",
+  value,
   error = null,
 }) {
   let customStyle =
@@ -31,6 +32,7 @@ function CustomInput({
           type={type}
           placeholder={placeholder}
           className={customStyle}
+          value={value}
           onChange={onChange}
         />
         {error && <MdError className="absolute right-3 text-utility-third" />}
@@ -44,7 +46,7 @@ export default function Login() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
 
-  const { state, login } = useAdminAuth();
+  const { state, error,  login } = useAdminAuth();
 
   const handleSubmit = async (event) => {
     event.preventDefault();
@@ -89,8 +91,9 @@ export default function Login() {
               label="Username or Email"
               placeholder="Enter Username or Email"
               className="w-full"
+              value={username}
               onChange={(e) => setUsername(e.target.value)}
-              //error={state.error?.username}
+              error={error?.username || error?.general} // แสดงข้อความ error ของ username
             />
 
             <CustomInput
@@ -98,8 +101,9 @@ export default function Login() {
               label="Password"
               placeholder="Enter password"
               className="w-full"
+              value={password}
               onChange={(e) => setPassword(e.target.value)}
-              //error={state.error?.password}
+              error={error?.password || error?.general} // แสดงข้อความ error ของ password
             />
 
             <CustomButton type="submit" buttonType="primary" className="w-full">
