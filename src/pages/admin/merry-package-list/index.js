@@ -107,6 +107,7 @@ function MerryPackageList() {
   // Verify authentication
   useEffect(() => {
     const token = localStorage.getItem("adminToken");
+
     if (!token) {
       router.push("/admin/login");
     } else {
@@ -114,6 +115,7 @@ function MerryPackageList() {
         const decodedToken = jwtDecode(token);
         const now = Date.now() / 1000;
         if (decodedToken.exp < now) {
+          alert("Session expired. Please login again.");
           logout(); // Token expired, redirect to login
         } else {
           setAuthLoading(false);

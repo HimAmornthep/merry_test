@@ -11,6 +11,8 @@ function MerryPackageAdd() {
   const router = useRouter(); // เรียกใช้ useRouter
 
   const [isModalOpen, setIsModalOpen] = useState(false); // Modal Open
+  const [isModalValidation, setIsModalValidation] = useState(false);
+  const [modalMessage, setModalMessage] = useState("");
   const [details, setDetails] = useState([{ id: 1, text: "" }]); // state สำหรับเก็บรายการ Detail โดยเริ่มต้นที่ 1 และ text = ""
   const [packageName, setPackageName] = useState("");
   const [merryLimit, setMerryLimit] = useState("");
@@ -19,6 +21,7 @@ function MerryPackageAdd() {
   const [icon, setIcon] = useState(null);
   const { logout } = useAdminAuth(); // ดึง logout จาก Context
   const [isSaving, setIsSaving] = useState(false); // State สำหรับ Loading ขณะบันทึก
+  const [validationErrors, setValidationErrors] = useState([]);
 
   const handleFileChange = (event) => {
     const file = event.target.files[0];
@@ -37,9 +40,41 @@ function MerryPackageAdd() {
       const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
 
       // Validation ข้อมูลก่อนส่ง
-      if (!packageName || !merryLimit === 0) {
+      if (!packageName || packageName.trim() === "") {
         // || details.length
-        alert("Please fill in all required fields.");
+        setModalMessage("Package name is required.");
+        setIsModalValidation(true);
+        setIsSaving(false);
+        return;
+      }
+
+      if (!merryLimit) {
+        setModalMessage("Merry limit is required."); // ข้อความที่จะปรากฏใน Modal
+        setIsModalValidation(true); // เปิด Modal
+        setIsSaving(false);
+        return;
+      }
+
+      if (!price || isNaN(price) || price <= 0) {
+        setModalMessage("price is required."); // ข้อความที่จะปรากฏใน Modal
+        setIsModalValidation(true); // เปิด Modal
+        setIsSaving(false);
+        return;
+      }
+
+      if (!icon) {
+        setModalMessage("Icon image is required.");
+        setIsModalValidation(true);
+        setIsSaving(false);
+        return;
+      }
+
+      if (
+        details.length === 0 ||
+        details.every((detail) => detail.text.trim() === "")
+      ) {
+        setModalMessage("At least one valid detail is required.");
+        setIsModalValidation(true);
         setIsSaving(false);
         return;
       }
@@ -340,6 +375,18 @@ function MerryPackageAdd() {
         }}
         title="Success"
         message="Package added successfully!"
+        confirmLabel="Submit"
+      />
+
+      {/*  Modal Validation */}
+      <DeleteConfirmationModal
+        isOpen={isModalValidation} // isModalOpen = true เปิดใช้งาน
+        onClose={() => setIsModalValidation(false)}
+        onConfirm={() => {
+          setIsModalValidation(false);
+        }}
+        title="Validation Error"
+        message={modalMessage}
         confirmLabel="Submit"
       />
     </div>
