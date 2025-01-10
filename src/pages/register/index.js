@@ -51,6 +51,7 @@ function RegisterPage() {
         }));
         setPreferencesOptions(genderOptions);
 
+
         const meetingInterestOptions = response.data.meeting_interest.rows.map(
           (item) => ({
             value: item.meeting_interest_id.toString(),
@@ -135,7 +136,6 @@ function RegisterPage() {
     formData.append("hobbies", JSON.stringify(hobbies));
     formData.append("aboutme", aboutme);
     formData.append("racialIdentities", racialIdentities);
-
     for (let avatarKey in avatar) {
       formData.append("avatar", avatar[avatarKey]);
     }
@@ -176,7 +176,7 @@ function RegisterPage() {
   const goToPrevStep = (e) => {
     e.preventDefault();
     if (step > 1) {
-      setStep(step - 1);
+      setStep(step- 1);
     }
   };
 
